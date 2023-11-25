@@ -7,7 +7,7 @@ type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T
 
 #[derive(Database)]
 #[database("sqlx")]
-struct SiteDatabase(sqlx::mysql::MySqlPool);
+pub struct SiteDatabase(sqlx::mysql::MySqlPool);
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("SQLx Stage", |rocket| async {
@@ -20,12 +20,12 @@ pub fn stage() -> AdHoc {
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 #[serde(crate = "rocket::serde")]
-struct UserData {
+pub struct UserData {
     id: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
-    session: Option<i64>,
+    session: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    privilege: Option<i64>,
+    privilege: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
 }

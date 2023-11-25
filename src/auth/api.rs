@@ -9,12 +9,18 @@ use rocket::{
     time::OffsetDateTime,
     FromForm, Request,
 };
+use rocket_db_pools::Connection;
 use serde::Deserialize;
 use std::{
     borrow::Cow,
     fmt::{self},
     str::FromStr,
 };
+use rand::{thread_rng, Rng};
+
+use crate::db::{SiteDatabase, UserData};
+
+type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Authentication-stage", |rocket| async {
@@ -30,20 +36,31 @@ struct Admin<'r> {
 }
 
 #[post("/login", data = "<admin>")]
-fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>) -> String {
+async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>) -> Result<String> {
     match admin {
         Some(form_data) => {
-            // validate form_data
+            // validate form_data i.e. check hashed password
 
-            let usr = User::Admin(1);
+            // gen
+            let session_id: i32;
+            {
+                let mut rng = thread_rng();
+                session_id = rng.gen();
+            };
+            
+            let _ = sqlx::query("UPDATE users SET session=? WHERE id = 1")
+                .bind(session_id)
+                .execute(&mut *db).await?;
+
+            let usr = User::Admin(session_id);
             let mut cookie = Cookie::new("user_id", &usr);
             let now = OffsetDateTime::now_utc();
             cookie.set_expires(now + rocket::time::Duration::hours(12));
             cookies.add_private(cookie);
             // usr.to_string()
-            "logged in".to_string()
+            Ok("logged in".to_string())
         }
-        None => "invalid form data".to_string(),
+        None => Ok("invalid form data".to_string()),
     }
 }
 
@@ -92,8 +109,8 @@ impl fmt::Display for AuthError {
 }
 
 pub enum User {
-    Admin(usize),
-    SuperAdmin(usize),
+    Admin(i32),
+    SuperAdmin(i32),
     RegularUser,
 }
 
@@ -119,7 +136,7 @@ impl FromStr for User {
     fn from_str(s: &str) -> Result<Self, anyhow::Error> {
         // let foo = s.split_once(" ");
         let (user_type, session_id) = s.split_once(" ").ok_or(AuthError::CookieParseError)?;
-        let session_id = session_id.parse::<usize>()?;
+        let session_id = session_id.parse::<i32>()?;
 
         match user_type {
             "Admin" => Ok(User::Admin(session_id)),

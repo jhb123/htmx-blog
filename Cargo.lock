@@ -763,6 +763,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "rand",
  "rocket",
  "rocket_db_pools",
  "serde",
