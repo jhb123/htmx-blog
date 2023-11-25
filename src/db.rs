@@ -1,13 +1,26 @@
-use rocket::{Rocket, fairing::{self, AdHoc}, Build, error, get, serde::json::Json, routes};
+use rocket::{Rocket, fairing::{self, AdHoc}, Build, error, get, serde::json::Json, routes, request::{FromRequest, Outcome}, Request};
 use rocket_db_pools::{sqlx, Database, Connection};
 use serde::{Deserialize, Serialize};
-use sqlx::migrate;
+use sqlx::{migrate, MySqlPool};
 
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
 
 #[derive(Database)]
 #[database("sqlx")]
 pub struct SiteDatabase(sqlx::mysql::MySqlPool);
+
+// #[rocket::async_trait]
+// impl<'r> FromRequest<'r> for SiteDatabase {
+//     type Error = sqlx::Error;
+
+//     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+//         let pool = request.guard::<rocket_db_pools::Connection<SiteDatabase>>().await.succeeded().unwrap();
+        
+//         // let db = try_outcome!(SiteDatabase);
+//         //Outcome::Success(pool.into_inner())
+//     }
+// }
+
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("SQLx Stage", |rocket| async {
@@ -16,7 +29,6 @@ pub fn stage() -> AdHoc {
             .mount("/db", routes![users])
     })
 }
-
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 #[serde(crate = "rocket::serde")]

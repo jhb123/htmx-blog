@@ -7,10 +7,11 @@ use rocket::{
     request::{FromRequest, Outcome},
     routes,
     time::OffsetDateTime,
-    FromForm, Request,
+    FromForm, Request, outcome::try_outcome,
 };
-use rocket_db_pools::Connection;
+use rocket_db_pools::{Connection, Database};
 use serde::Deserialize;
+use sqlx::Row;
 use std::{
     borrow::Cow,
     fmt::{self},
@@ -18,7 +19,7 @@ use std::{
 };
 use rand::{thread_rng, Rng};
 
-use crate::db::{SiteDatabase, UserData};
+use crate::db::SiteDatabase;
 
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
 
@@ -81,6 +82,8 @@ pub enum AuthError {
     InvalidUserPriviledge,
     PriviledgeExpired,
     CookieParseError,
+    NoSessionId,
+    InvalidSessionId,
 }
 
 impl std::error::Error for AuthError {
@@ -104,6 +107,8 @@ impl fmt::Display for AuthError {
             AuthError::InvalidUserPriviledge => write!(f, "InvalidUserPriviledge"),
             AuthError::PriviledgeExpired => write!(f, "PriviledgeExpired"),
             AuthError::CookieParseError => write!(f, "CookieParseError"),
+            AuthError::NoSessionId => write!(f, "NoSessionId"),
+            AuthError::InvalidSessionId => write!(f, "InvalidSessionId"),
         }
     }
 }
@@ -123,8 +128,8 @@ impl From<&User> for Cow<'_, str> {
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            User::Admin(time) => write!(f, "Admin {time}"),
-            User::SuperAdmin(time) => write!(f, "SuperAdmin {time}"),
+            User::Admin(session_id) => write!(f, "Admin {session_id}"),
+            User::SuperAdmin(session_id) => write!(f, "SuperAdmin {session_id}"),
             User::RegularUser => write!(f, "RegularUser"),
         }
     }
@@ -151,6 +156,9 @@ impl<'r> FromRequest<'r> for User {
     type Error = AuthError;
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<User, Self::Error> {
+        // This was not obvious from the docs.
+        let mut db = request.guard::<rocket_db_pools::Connection<SiteDatabase>>().await.succeeded().unwrap();
+
         match request
             .cookies()
             .get_private("user_id")
@@ -159,11 +167,20 @@ impl<'r> FromRequest<'r> for User {
             Some(user) => {
                 match user {
                     User::Admin(session_id) => {
-                        println!("{0}", session_id);
-                        Outcome::Success(user)
-                        // } else {
-                        //     Outcome::Failure((Status::Unauthorized, AuthError::PriviledgeExpired))
-                        // }
+                        let res = sqlx::query("SELECT session FROM users WHERE id = 1")
+                        .fetch_one(&mut *db).await.unwrap();
+
+                        let server_session_id: Option::<i32> = res.get::<Option::<i32>,_>(0);
+                        match  server_session_id {
+                            Some(val) => {
+                                if session_id == val {
+                                    Outcome::Success(user)
+                                } else {
+                                    Outcome::Failure((Status::Unauthorized, AuthError::InvalidSessionId))
+                                }
+                            }
+                            None => Outcome::Failure((Status::Unauthorized, AuthError::NoSessionId))
+                        }
                     }
                     User::SuperAdmin(_) => Outcome::Success(user),
                     User::RegularUser => Outcome::Success(user),
