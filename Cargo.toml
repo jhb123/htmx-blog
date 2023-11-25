@@ -1,0 +1,35 @@
+[package]
+name = "htmx-blog"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+serde = "1.0.188"
+
+[dependencies.chrono]
+chrono = "0.4.31"
+features =["serde"]
+
+[dependencies.rocket]
+rocket = "=0.5.0-rc.3"
+features = ["json", "secrets", "tls"]
+
+[dependencies.sqlx]
+version = "0.6"
+default-features = false
+features = ["macros", "migrate", "chrono"]
+
+[dependencies.rocket_db_pools]
+version = "=0.1.0-rc.3"
+features = ["sqlx_mysql"]
+
+[dependencies.uuid]
+version = "1.6.1"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]

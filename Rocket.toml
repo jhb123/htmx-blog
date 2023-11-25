@@ -1,0 +1,3 @@
+[default.tls]
+certs = "secrets/cert.pem"
+key = "secrets/key.pem"
