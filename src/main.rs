@@ -1,13 +1,14 @@
 use rocket::{routes, launch, get};
-use htmx_blog::auth::api::stage;
-
+use htmx_blog::auth::api;
+use htmx_blog::db;
 
 #[launch]
 async fn rocket() ->  _ {
 
     rocket::build()
         .mount("/", routes![index])
-        .attach(stage())
+        .attach(db::stage())
+        .attach(api::stage())
 
 }
 

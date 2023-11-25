@@ -1,5 +1,5 @@
 use rocket::{
-    fairing::AdHoc,
+    fairing::{AdHoc, self},
     form::Form,
     get,
     http::{Cookie, CookieJar, Status},
