@@ -16,7 +16,7 @@ This application is made of two parts: the server and the MySQL database. Before
     └── key.pem
 ```
 Notes on each file:
-- `.env_local` is optional and is for development purposes. Malke sure the password matches whats in `db_root_password.txt`. It should contain the following:
+- `.env_local` is optional and is for development purposes. Make sure the password matches what is in `db_root_password.txt`. It should contain the following:
     ```
     export ROCKET_PROFILE="debug"
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@0.0.0.0:3306/blog"}}
@@ -57,4 +57,4 @@ Finally, build the server with e.g.
 cargo run --bin server
 ```
 ## Development
-Never delete or modify the files in `db/migrations`. If you need a new migration, you must add them correctly. Otherwise, you will mess up the MySQL database.
+Never delete or modify the files in `db/migrations`. If you need a new migration, you must add them correctly otherwise you will mess up the MySQL database.
