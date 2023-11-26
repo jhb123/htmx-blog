@@ -1,7 +1,7 @@
-use rocket::{Rocket, fairing::{self, AdHoc}, Build, error, get, serde::json::Json, routes, request::{FromRequest, Outcome}, Request};
+use rocket::{Rocket, fairing::{self, AdHoc}, Build, error, get, serde::json::Json, routes};
 use rocket_db_pools::{sqlx, Database, Connection};
 use serde::{Deserialize, Serialize};
-use sqlx::{migrate, MySqlPool};
+use sqlx::migrate;
 
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
 

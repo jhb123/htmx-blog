@@ -1,5 +1,6 @@
 use rocket::{
-    fairing::{AdHoc, self},
+    State,
+    fairing::AdHoc,
     form::Form,
     get,
     http::{Cookie, CookieJar, Status},
@@ -7,9 +8,9 @@ use rocket::{
     request::{FromRequest, Outcome},
     routes,
     time::OffsetDateTime,
-    FromForm, Request, outcome::try_outcome,
+    FromForm, Request,
 };
-use rocket_db_pools::{Connection, Database};
+use rocket_db_pools::Connection;
 use serde::Deserialize;
 use sqlx::Row;
 use std::{
@@ -20,6 +21,8 @@ use std::{
 use rand::{thread_rng, Rng};
 
 use crate::db::SiteDatabase;
+use crate::config::AppConfig;
+use crate::auth::util::validate_password;
 
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
 
@@ -37,10 +40,17 @@ struct Admin<'r> {
 }
 
 #[post("/login", data = "<admin>")]
-async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>) -> Result<String> {
+async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> (Status, &'static str) {
+    cookies.remove(Cookie::named("user_id"));
     match admin {
         Some(form_data) => {
-            // validate form_data i.e. check hashed password
+
+            let entered_password = form_data.password;
+            let admin_hash = &app_config.admin_hash;
+            match validate_password(entered_password, &admin_hash[..]) {
+                Ok(_) => {},
+                Err(_) => return (Status::Unauthorized, "incorrect password")
+            }
 
             // gen
             let session_id: i32;
@@ -51,7 +61,7 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             
             let _ = sqlx::query("UPDATE users SET session=? WHERE id = 1")
                 .bind(session_id)
-                .execute(&mut *db).await?;
+                .execute(&mut *db).await.unwrap();
 
             let usr = User::Admin(session_id);
             let mut cookie = Cookie::new("user_id", &usr);
@@ -59,9 +69,9 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             cookie.set_expires(now + rocket::time::Duration::hours(12));
             cookies.add_private(cookie);
             // usr.to_string()
-            Ok("logged in".to_string())
+            (Status::Ok, "logged in")
         }
-        None => Ok("invalid form data".to_string()),
+        None =>(Status::BadRequest , "no form data")
     }
 }
 
@@ -84,6 +94,7 @@ pub enum AuthError {
     CookieParseError,
     NoSessionId,
     InvalidSessionId,
+    InvalidPassword,
 }
 
 impl std::error::Error for AuthError {
@@ -109,6 +120,7 @@ impl fmt::Display for AuthError {
             AuthError::CookieParseError => write!(f, "CookieParseError"),
             AuthError::NoSessionId => write!(f, "NoSessionId"),
             AuthError::InvalidSessionId => write!(f, "InvalidSessionId"),
+            AuthError::InvalidPassword => write!(f, "InvalidPassword"),
         }
     }
 }

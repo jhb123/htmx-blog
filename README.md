@@ -21,12 +21,15 @@ Notes on each file:
     export ROCKET_PROFILE="debug"
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@0.0.0.0:3306/blog"}}
     export ROCKET_TLS={certs="secrets/cert.pem",key="secrets/key.pem"}
+    export ROCKET_ADMIN_HASH="..."
     ```
+    The hashed password should be generated with the sha256 function, and this can be done on various websites.
 - `.env_deploy` has the environment variables needed to run the server in the dockerised application. Its very similar to the one above, but the host name of the MySQL is different and the location of the TLS certificate and key are in a different place.
     ```
     export ROCKET_PROFILE="debug"
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@db:3306/blog"}}
     export ROCKET_TLS={certs="/run/secrets/cert",key="/run/secrets/key"}
+    export ROCKET_ADMIN_HASH="..."
     ```
 - `db_root_password.txt` contains a password needed for MySQL.
 - `db_password.txt` contains a password needed for MySQL.
@@ -51,7 +54,7 @@ $ source secrets/.env_local
 ```
 Finally, build the server with e.g.
 ```
-cargo run
+cargo run --bin server
 ```
 ## Development
 Never delete or modify the files in `db/migrations`. If you need a new migration, you must add them correctly. Otherwise, you will mess up the MySQL database.
