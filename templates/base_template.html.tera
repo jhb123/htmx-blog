@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Joe's Blog{% endblock %}</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/htmx.org@1.9.9"></script>
 </head>
 <body>
-    <header>
-        <h1>{% block header %}Base{% endblock %}</h1>
-    </header>
+    {% include "page_header" %}
     <main>
+    <h2>{{ title }}</h2>
         {% block content %}{% endblock %}
     </main>
     <footer>

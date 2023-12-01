@@ -1,0 +1,12 @@
+{% block loginPanel %}
+    {% if admin %}
+        <button>logout</button>
+    {% else %}
+        <form id="adminLogin"  hx-post='/auth/login'>
+        <label for="password">Password</label>
+        <input type="text" id="password" name="password">
+        <input type="submit">
+    </form>
+    {% endif %}
+
+{% endblock loginPanel %}

@@ -6,11 +6,13 @@ use rocket::{
     http::{Cookie, CookieJar, Status},
     post,
     request::{FromRequest, Outcome},
-    routes,
+    response::Redirect,
+    routes, catchers,
     time::OffsetDateTime,
-    FromForm, Request,
+    FromForm, Request, catch,
 };
 use rocket_db_pools::Connection;
+use rocket_dyn_templates::{Template, context};
 use serde::Deserialize;
 use sqlx::Row;
 use std::{
@@ -30,7 +32,8 @@ pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Authentication-stage", |rocket| async {
         //rocket.attach(ArticlesDb::init())
         //    .attach(AdHoc::try_on_ignite("SQLx Migrations", run_migrations))
-        rocket.mount("/auth", routes![login, logout, secured])
+        rocket.mount("/auth", routes![login, logout, secured, logout_panel, login_panel])
+        .register("/auth/panel", catchers![logout_catcher])
     })
 }
 
@@ -39,8 +42,32 @@ struct Admin<'r> {
     pub r#password: &'r str,
 }
 
+// #[get("/toggle", rank=1)]
+// fn admin_login_toggle() -> 
+
+// #[get("/toggle", rank=2)]
+// fn admin_login_toggle_logged_in(user: User) -> Template { 
+//     Template::render("adminToggle", context! { title: "Hello, World", admin: true })
+// }
+
+#[get("/panel", rank=1)]
+fn logout_panel(_user: User) -> Template { 
+        Template::render("loginPanel", context! { admin: true })
+}
+
+#[catch(401)]
+fn logout_catcher() -> Redirect { 
+    Redirect::to("/auth/panel/login")
+}
+
+#[get("/panel/login", rank=1)]
+fn login_panel() -> Template { 
+    Template::render("loginPanel", context! { admin: false })
+}
+
+
 #[post("/login", data = "<admin>")]
-async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> (Status, &'static str) {
+async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> Redirect {
     cookies.remove(Cookie::named("user_id"));
     match admin {
         Some(form_data) => {
@@ -49,7 +76,8 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             let admin_hash = &app_config.admin_hash;
             match validate_password(entered_password, &admin_hash[..]) {
                 Ok(_) => {},
-                Err(_) => return (Status::Unauthorized, "incorrect password")
+                Err(_) => return Redirect::to("/auth/panel/login")
+
             }
 
             // gen
@@ -69,9 +97,10 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             cookie.set_expires(now + rocket::time::Duration::hours(12));
             cookies.add_private(cookie);
             // usr.to_string()
-            (Status::Ok, "logged in")
+            Redirect::to("/auth/panel")
+
         }
-        None =>(Status::BadRequest , "no form data")
+        None => Redirect::to("/auth/panel")
     }
 }
 

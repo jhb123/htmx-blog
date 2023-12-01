@@ -1,0 +1,4 @@
+<header>
+    <h1>Joe's website</h1>
+    {% include "adminToggle" %}
+</header>

@@ -6,6 +6,7 @@ use rocket::fs::NamedFile;
 use rocket_dyn_templates::{Template, context};
 
 use htmx_blog::auth::api;
+use htmx_blog::auth::api::User;
 use htmx_blog::db;
 use htmx_blog::config::AppConfig;
 
@@ -21,12 +22,13 @@ async fn rocket() ->  _ {
 
 }
 
-#[get("/")]
+#[get("/", rank = 1)]
 fn index() -> Template {
-    Template::render("index", context! { title: "Hello, World", items: vec!["a","b","c"] })
+    Template::render("index", context! { title: "Hello, World", admin: true })
 }
 
-#[get("/<path..>", rank = 2)]
+
+#[get("/<path..>", rank = 3)]
 async fn static_resources(path: PathBuf) -> Option<NamedFile> {
     let base_path = Path::new("./static/");
     let full_path = base_path.join(path);
