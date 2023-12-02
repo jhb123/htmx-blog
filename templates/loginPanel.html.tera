@@ -1,8 +1,8 @@
 {% block loginPanel %}
     {% if admin %}
-        <button>logout</button>
+        <button hx-get='auth/logout' hx-swap="innerHTML" hx-target="body">logout</button>
     {% else %}
-        <form id="adminLogin"  hx-post='/auth/login'>
+        <form id="adminLogin"  hx-post='/auth/login' hx-swap="innerHTML" hx-target="body">
         <label for="password">Password</label>
         <input type="text" id="password" name="password">
         <input type="submit">

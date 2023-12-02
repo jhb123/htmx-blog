@@ -17,4 +17,5 @@
         <!-- Footer content goes here -->
     </footer>
 </body>
+    <script src="/js/dialog.js"></script>
 </html>

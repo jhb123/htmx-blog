@@ -1,22 +1,14 @@
 {% block adminToggle %}
-<button id="showDialog">Admin log in</button>
+<button id="showDialog">
+{% if admin %}
+log out
+{% else %}
+log in
+{% endif %}
+</button>
 <dialog id="adminDialog">
-    <div hx-get="/auth/panel" hx-trigger="load" hx-swap="outerHTML"></div> 
+    <div hx-get="/auth/panel" hx-trigger="load" hx-swap="outerHTML" ></div> 
     <button id="closeAdminDialog">close</button>
+    <button hx-get="/auth/secured/" hx-swap="innerHTML">test</div>
 </dialog>
-<script>
-    const dialog = document.getElementById("adminDialog");
-    const showButton = document.getElementById("showDialog")
-    const closeButton = document.getElementById("closeAdminDialog");
-
-    // "Show the dialog" button opens the dialog modally
-    showButton.addEventListener("click", () => {
-    dialog.showModal();
-    });
-
-    // "Close" button closes the dialog
-    closeButton.addEventListener("click", () => {
-    dialog.close();
-});
-</script>
 {% endblock adminToggle %}

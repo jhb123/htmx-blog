@@ -67,7 +67,7 @@ fn login_panel() -> Template {
 
 
 #[post("/login", data = "<admin>")]
-async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> Redirect {
+async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> Template {
     cookies.remove(Cookie::named("user_id"));
     match admin {
         Some(form_data) => {
@@ -76,8 +76,7 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             let admin_hash = &app_config.admin_hash;
             match validate_password(entered_password, &admin_hash[..]) {
                 Ok(_) => {},
-                Err(_) => return Redirect::to("/auth/panel/login")
-
+                Err(_) => return Template::render("loginPanel", context! { admin: false })
             }
 
             // gen
@@ -97,22 +96,24 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             cookie.set_expires(now + rocket::time::Duration::hours(12));
             cookies.add_private(cookie);
             // usr.to_string()
-            Redirect::to("/auth/panel")
+            // Redirect::to("/")
+            Template::render("index", context! { title: "Hello, World", admin: true })
 
         }
-        None => Redirect::to("/auth/panel")
+        None => Template::render("loginPanel", context! { admin: true })
     }
 }
 
 #[get("/secured")]
-fn secured(user: User) -> String {
-    user.to_string()
+fn secured(user: User) -> Template { 
+        Template::render("test", context! { info: "secured" })
+        
 }
 
 #[get("/logout")]
-fn logout(cookies: &CookieJar<'_>) -> String {
+fn logout(cookies: &CookieJar<'_>) -> Template {
     cookies.remove(Cookie::named("user_id"));
-    "Logged out".to_string()
+    Template::render("index", context! { title: "Hello, World", admin: false })
 }
 
 #[derive(Debug)]
