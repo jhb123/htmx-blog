@@ -14,7 +14,7 @@ use htmx_blog::config::AppConfig;
 async fn rocket() ->  _ {
 
     rocket::build()
-        .mount("/", routes![index_admin, static_resources, js_resources])
+        .mount("/", routes![index_admin, static_resources, js_resources, cv])
         .attach(db::stage())
         .attach(api::stage())
         .attach(writing::stage())
@@ -38,6 +38,11 @@ fn index() -> Template {
 #[get("/", rank=1)]
 fn index_admin(_user: User) -> Template { 
         Template::render("index", context! { admin: true })
+}
+
+#[get("/cv", rank=1)]
+fn cv() -> Template { 
+        Template::render("cv_main", context! { intro: "test" })
 }
 
 

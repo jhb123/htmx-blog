@@ -1,0 +1,169 @@
+{
+    "intro": "Driven problem solver looking to take the next step in a career in software development. Innovative and thrives on challenges. Adept at learning new products, systems and technologies. Proactive, diligent, self-sufficient, reliable and collegial.",
+    "skills": {
+        "programming languages": {
+            "3y": [
+                "Python"
+            ],
+            "1y": [
+                "Rust",
+                "Javascript",
+                "Kotlin"
+            ]
+        },
+        "UI": [
+            "Compose",
+            "MUI"
+        ],
+        "libraries and frameworks": [
+            "React",
+            "Numpy",
+            "Jetpack",
+            "OpenCV",
+            "Rocket",
+            "Appium"
+        ],
+        "programming tools": [
+            "Docker",
+            "Git",
+            "Github Actions"
+        ],
+        "technical skills": [
+            "Signal processing",
+            "Mathematics",
+            "Machine learning",
+            "Statistics"
+        ],
+        "cloud": [
+            "AWS S3",
+            "AWS SES",
+            "AWS Lambda",
+            "AWS DynamoDB"
+        ],
+        "soft skills": [
+            "Agile methodologies",
+            "Teamwork and collaboration",
+            "Active listening",
+            "Planning",
+            "Time management"
+        ]
+    },
+    "programming projects": {
+        "CrosswordScan": {
+            "name": "CrosswordScan",
+            "blurb": "This project is composed of two parts: an Android app and a Python REST API which leverages AWS. The Android app lets users digitise and share crosswords. The app consists of eight screens, is written in Kotlin, employs an MVVM architecture and uses Jetpack compose along with Material 3. Crossword grids are detected in real-time using a custom processing pipeline made with OpenCV, and Google's ML kit is used to extract the clues from photographs. The Python REST API was made using Flask, and this utilises AWS to store data, send emails and manage databases. This is deployed as a Lambda function. The Android app uses Github workflows to deploy it to the Playstore, and it is in internal testing mode while a small group of users test it. The Python Flask server project uses workflows to run tests every time code is pushed, and coverage reports are generated when code is merged onto the main branch.",
+            "links": [
+                "https://github.com/jhb123/crossword-scan-app",
+                "https://github.com/jhb123/PuzzleServer"
+            ]
+        },
+        "enhance_greyscale": {
+            "name": "enhance_greyscale",
+            "blurb": "A convolutional neural network made with PyTorch for upscaling greyscale images.",
+            "links": [
+                "https://github.com/jhb123/enhance_greyscale"
+            ]
+        }
+    },
+    "jobs": {
+        "evertz": {
+            "company": "Evertz",
+            "roles": [
+                {
+                    "title": "Design Engineer",
+                    "blurb": "This role focussed on building software tools for developing state-of-the-art hardware for streaming audio visual data.",
+                    "dates": "November 2023 - Present",
+                    "highlights": []
+                }
+            ]
+        },
+        "motorola": {
+            "company": "Motorola Solutions",
+            "roles": [
+                {
+                    "title": "System Test and Integration Engineer",
+                    "dates": "October 2022 - November 2023",
+                    "highlights": []
+                },
+                {
+                    "title": "Junior System Test and Integration Engineer",
+                    "blurb": "This role focussed on testing a multi-platform suite of software products used by police agencies.",
+                    "dates": "November 2022 - October 2023",
+                    "highlights": [
+                        "Delivering an ID scanning app during a 2 day Hackathon. The app utilised machine learning and the phone's camera. I designed the product, managed a team, mentored team members, designed the app's architecture and developed a large portion of the codebase.",
+                        "Automating regression tests. When I started this role, regression testing of the product's Android, iOS and Windows clients was done manually. I took the initiative and created a Python package which used Appium and HTTP requests to test the application. I wrote a set of 20 Gherkin scripts for running regression tests, and this has laid the ground work for a more extensive test suite.",
+                        "Converted hundreds of unit and integration tests from the Moq framework to the NSubstitute testing framework.",
+                        "Improving the testability of the clients by adding properties to the UI that can be detected with automation frameworks. This required me to work with C#.",
+                        "Manually testing and investigating bugs found in the suite of products."
+                    ]
+                }
+            ]
+        },
+        "ouster": {
+            "company": "Ouster (formerly for Sense Photonics)",
+            "roles": [
+                {
+                    "title": "System test and characterisation engineer",
+                    "blurb": "Worked in the R&D team within a high-paced startup that made hardware for use in self-driving cars. My role was to ensure that the product's design would meet the customer's requirements.",
+                    "dates": "May 2021 - October 2022",
+                    "highlights": [
+                        "I identified features from the hardware's data that could be used in novel algorithms to enhance its performance by a factor of 10. These results guided design choices and were essential for demonstrating the feasibility and viability of the product.",
+                        "Quick turn-around between the product team and engineers was required, and I was key in developing a Python package for running simulations and analysing data to enable this.",
+                        "To produce new products, in-depth characterisation of quantum light detectors was needed. I automated experiments with Python, and this improved the reproducibility of tests and reduced test time from days to hours. I led discussions based on the results with a large group of engineers on a bi-weekly basis. This work could be audited by automotive customers, so rigorous methodologies, reports and data management were essential.",
+                        "To demonstrate the viability of the product, I lead field testing of the product's proof-of-concept. This included hiring the use of an airstrip and people management."
+                    ]
+                }
+            ]
+        },
+        "caltech" : {
+            "company": "Caltech",
+            "roles": [
+                {
+                    "title": "Visiting Researcher",
+                    "dates": "October 2019 - December 2019",
+                    "blurb": "The laser is a fundamental part of the LIGO experiment. I worked in a team to prototype LIGO's new laser and we obtained a 30% performance increase. This work was published.",
+                    "highlights" : []
+                }
+            ]
+        }
+    },
+    "education" : {
+        "phd" : {
+            "university" : "University of Glasgow",
+            "degree": "PhD Physics",
+            "dates" : "2017-2021",
+            "grade" : "Minor corrections",
+            "highlights" : ["Worked on various aspects of a Nobel prize-winning experiment known as LIGO. LIGO detects gravitational waves and it uses complex instruments made up of dozens of interconnected subsystems to do this.", "Developed Python scripts to aid in the design of experiments. This involved advanced mathematics and the design of algorithms. This was key for the rapid conceptualisation of the hardware for the UK's £10.7 million contribution to an international scientific project.",
+            "Identified an 8% improvement to LIGO's apparatus. This was done by consulting on-site scientists, reviewing measurements and design work, and running a simulation to test a hypothesis. Key parts of the upgrade to LIGO are influenced by this analysis.",
+            "Researched the feasibility of using novel light detection technologies in gravitational wave detectors. This involved defining requirements, designing experiments and data analysis. Presented the results at a conference.",
+            "Wrote a 350-page PhD thesis. Deep technical knowledge, a high level of organisation and time management was required to meet the deadline for writing my thesis.",
+            "Taught lab work to undergraduates. This involved active listening and explaining concepts.",
+            "Showcased aspects of gravitational wave research to members of the public at the Scottish Festival of Physics. This involved speaking to a wide range of the general public, from children to adults. To pitch to my audience, I needed to be adaptable, engaging, confident and friendly."]
+        },
+        "undergrad" : {
+            "university" : "University of Birmigham",
+            "degree": "Msci Physics",
+            "grade" : "First class honours",
+            "dates" : "2013-2017",
+            "highlights" : ["Masters project focussed on using machine learning to enhance seismic sensors. This work was published."]
+        }
+    },
+    "training" : {
+        "machine learning" : {
+            "title" : "Machine Learning",
+            "provider" : "Coursera",
+            "blurb": "Included modules on linear and logistic regression, neural networks, SVNs, anomaly detection, online algorithms, unsupervised learning and recommender systems."
+        },
+        "sql for data science" : {
+            "title" : "SQL for Data Science",
+            "provider" : "Coursera",
+            "blurb": "This course focussed on using SQL to search databases optimally."
+        },
+        "docker and aws" : {
+            "title" : "Containerized Applications on AWS",
+            "provider" : "Coursera",
+            "blurb": "This had modules on Docker, ECR, ECS, Fargate, Kubernetes, and Lambda."      
+        }
+    },
+    "interests" : "I enjoy many outdoor activities such as hill walking and mountain biking. I also like cryptic crosswords, reading and cooking."
+}
