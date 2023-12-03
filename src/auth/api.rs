@@ -3,13 +3,13 @@ use rocket::{
     fairing::AdHoc,
     form::Form,
     get,
-    http::{Cookie, CookieJar, Status},
+    http::{Cookie, CookieJar, Status, uri::{Origin, Uri}},
     post,
-    request::{FromRequest, Outcome},
+    request::{FromRequest, Outcome, self},
     response::Redirect,
     routes, catchers,
     time::OffsetDateTime,
-    FromForm, Request, catch,
+    FromForm, Request, catch, uri,
 };
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};
@@ -18,7 +18,7 @@ use sqlx::Row;
 use std::{
     borrow::Cow,
     fmt::{self},
-    str::FromStr,
+    str::FromStr, convert::Infallible,
 };
 use rand::{thread_rng, Rng};
 
@@ -67,8 +67,9 @@ fn login_panel() -> Template {
 
 
 #[post("/login", data = "<admin>")]
-async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> Template {
+async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>, url: HtmxCurrentUrl) -> Redirect {
     cookies.remove(Cookie::named("user_id"));
+
     match admin {
         Some(form_data) => {
 
@@ -76,7 +77,7 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             let admin_hash = &app_config.admin_hash;
             match validate_password(entered_password, &admin_hash[..]) {
                 Ok(_) => {},
-                Err(_) => return Template::render("loginPanel", context! { admin: false })
+                Err(_) => return Redirect::to("/panel/login")//Template::render("loginPanel", context! { admin: false })
             }
 
             // gen
@@ -97,10 +98,13 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             cookies.add_private(cookie);
             // usr.to_string()
             // Redirect::to("/")
-            Template::render("index", context! { title: "Hello, World", admin: true })
+            // let r = uri!(origin.path().to_string());
+            Redirect::to(url.0)
+            // Redirect::to(origin)
+            // Template::render("index", context! { title: "Hello, World", admin: true })
 
         }
-        None => Template::render("loginPanel", context! { admin: true })
+        None => Redirect::to(url.0) // Template::render("loginPanel", context! { admin: true })
     }
 }
 
@@ -231,4 +235,18 @@ impl<'r> FromRequest<'r> for User {
             None => Outcome::Failure((Status::Unauthorized, AuthError::MissingAuthCookie)),
         }
     }
+}
+
+struct HtmxCurrentUrl(String);
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for HtmxCurrentUrl {
+    type Error = Infallible;
+
+
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let url = req.headers().get_one("HX-Current-URL").unwrap();
+        return  Outcome::Success(HtmxCurrentUrl(url.to_string()));
+    }
+
 }
