@@ -9,7 +9,7 @@ use rocket::{
     response::Redirect,
     routes, catchers,
     time::OffsetDateTime,
-    FromForm, Request, catch, uri,
+    FromForm, Request, catch, uri, Response,
 };
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};
@@ -114,10 +114,15 @@ fn secured(user: User) -> Template {
         
 }
 
-#[get("/logout")]
-fn logout(cookies: &CookieJar<'_>) -> Template {
+#[derive(Deserialize, FromForm)]
+struct Logout<'r> {
+    pub r#url: &'r str,
+}
+
+#[post("/logout", data = "<logout_form>")]
+fn logout(cookies: &CookieJar<'_>, logout_form: Form<Logout<'_>>) -> Redirect {
     cookies.remove(Cookie::named("user_id"));
-    Template::render("index", context! { title: "Hello, World", admin: false })
+    Redirect::to(logout_form.url.to_string()) 
 }
 
 #[derive(Debug)]
@@ -245,6 +250,7 @@ impl<'r> FromRequest<'r> for HtmxCurrentUrl {
 
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        println!("{:?}",req.headers());
         let url = req.headers().get_one("HX-Current-URL").unwrap();
         return  Outcome::Success(HtmxCurrentUrl(url.to_string()));
     }

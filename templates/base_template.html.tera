@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/htmx.org@1.9.9"></script>
 </head>
-<body hx-boost>
+<body hx-boost id="main-body">
     {% include "page_header" %}
     <main>
         {% block content %}{% endblock %}
