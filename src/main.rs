@@ -7,17 +7,18 @@ use rocket_dyn_templates::{Template, context};
 
 use htmx_blog::auth::api;
 use htmx_blog::auth::api::User;
-use htmx_blog::{db, writing};
+use htmx_blog::{db, writing, cv};
 use htmx_blog::config::AppConfig;
 
 #[launch]
 async fn rocket() ->  _ {
 
     rocket::build()
-        .mount("/", routes![index_admin, static_resources, js_resources, cv])
+        .mount("/", routes![index_admin, static_resources, js_resources])
         .attach(db::stage())
         .attach(api::stage())
         .attach(writing::stage())
+        .attach(cv::stage())
         .attach(AdHoc::config::<AppConfig>())
         .attach(Template::fairing())
         .register("/", catchers![index])
@@ -39,12 +40,6 @@ fn index() -> Template {
 fn index_admin(_user: User) -> Template { 
         Template::render("index", context! { admin: true })
 }
-
-#[get("/cv", rank=1)]
-fn cv() -> Template { 
-        Template::render("cv_main", context! { intro: "test" })
-}
-
 
 #[get("/js/<path..>", rank = 2)]
 async fn js_resources(path: PathBuf) -> Option<NamedFile> {

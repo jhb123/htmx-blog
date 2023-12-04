@@ -1,6 +1,79 @@
 <h1>CV</h1>
-
-<h2>Intro<h2>
+<h2>Intro</h2>
 <p>
-{{intro}}
+{{cv_data.intro}}
 </p>
+<h2>Skills</h2>
+<p>
+{% for key, value in cv_data.skills["programming languages"] %}
+    <h4>{{key}}</h4>
+    <ul>
+        {% for skill in value %}
+        <li>
+            <p>{{skill}}</p>
+        </li>
+        {% endfor %}
+    </ul>
+{% endfor %}
+{% for key, value in cv_data.skills %}
+{% if key != "programming languages" %}
+    <h4>{{key}}</h4>
+    <ul>
+        {% for skill in value %}
+        <li>
+            <p>{{skill}}</p>
+        </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endfor %}
+<h2>Jobs</h2>
+{% for key, value in cv_data["jobs"] %}
+    <h3>{{value.company}}</h3>
+    <ul>
+        {% for role in value.roles %}
+        <li>
+            <h4>{{role.title}}</h4>
+            <p>{{role.dates}}</p>
+            <p>{{role.blurb}}</p>
+            <ul>
+            {% for highlight in role.highlights%}
+                <li>{{highlight}}</li>
+            {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+{% endfor %}
+<h2>Programming Projects</h2>
+{% for key, value in cv_data["programming projects"] %}
+    <h3>{{value.name}}</h3>
+    <p>{{value.blurb}}</p>
+    <ul>
+        {% for link in value.links %}
+        <li>
+            <a href={{link}}>{{link}}</a>
+        </li>
+        {% endfor %}
+    </ul>
+{% endfor %}
+<h2>Education</h2>
+{% for key, value in cv_data["education"] %}
+    <h3>{{value.degree}}</h3>
+    <p>{{value.university}}</p>
+    <p>{{value.dates}}</p>
+    <p>{{value.grade}}</p>
+    <ul>
+        {% for highlight in value.highlights %}
+        <li>
+            <p>{{highlight}}</p>
+        </li>
+        {% endfor %}
+    </ul>
+{% endfor %}
+<h2>Training</h2>
+{% for key, value in cv_data["training"] %}
+    <h3>{{value.title}}</h3>
+    <p>{{value.provider}}</p>
+    <p>{{value.blurb}}</p>
+{% endfor %}
