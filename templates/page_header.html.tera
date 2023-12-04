@@ -1,0 +1,9 @@
+<header>
+    <h1>Joe's website</h1>
+    <a href="/">home</a>
+    <a href="/writing">writing</a>
+    {% include "adminToggle" %}
+    {% if admin %}
+    <p>Logged in as admin</p>
+    {% endif %}
+</header>

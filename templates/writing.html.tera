@@ -1,0 +1,12 @@
+{% extends "base_template" %}
+
+{% block title %}Writing{% endblock %}
+
+{% block header %}Writing{% endblock %}
+
+{% block content %}
+    <p>Blogs</p>
+    {% if admin %}
+        <h3>Secret admin panel</h3>
+    {% endif %}
+{% endblock %}
