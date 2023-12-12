@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.75"
+kuchiki = "0.8.1"
+markdown = "1.0.0-alpha.14"
 rand = "0.8.5"
 serde = "1.0.188"
 sha256 = "1.4.0"
