@@ -5,8 +5,37 @@
 {% block header %}Writing{% endblock %}
 
 {% block content %}
-    <p>Blogs</p>
     {% if admin %}
-        <h3>Secret admin panel</h3>
+        <div class="form-container">
+        <h1>Add or update documents</h1>
+        <form id="writing-add-update" hx-post='/writing/submit'>
+            <div class="form-group">
+                <label for="article-id">Article I.D.</label>
+                <input type="text" id="article-id" name="article_id">
+            </div>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title">
+            </div>
+            <div class="form-group">
+                <label for="blurb">Blurb</label>
+                <textarea rows="7" type="text" id="blurb" name="blurb" form="writing-add-update"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="tags">Tags</label>
+                <input type="text" id="tags" name="tags">
+            </div>
+            <input onChange={onFieldChange} id="articleFiles" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
+            <input type="submit">
+        </form>
+        </div>
     {% endif %}
+    <h1>Writing</h1>
+    {% for data in blog_data%}
+        <div class="writing-summary">
+            <h2>{{data.title}}</h2>
+            <p>{{data.date}}</p>
+            <p>{{data.blurb}}</p>
+        </div>
+    {% endfor %}
 {% endblock %}
