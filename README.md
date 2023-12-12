@@ -57,4 +57,6 @@ Finally, build the server with e.g.
 cargo run --bin server
 ```
 ## Development
+Add a migration with `sqlx migrate add --source db/migrations <name of migrations>`
+
 Never delete or modify the files in `db/migrations`. If you need a new migration, you must add them correctly otherwise you will mess up the MySQL database.
