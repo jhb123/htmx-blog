@@ -10,7 +10,7 @@ use sqlx::{QueryBuilder, Row};
 
 use crate::{auth::api::User, db::SiteDatabase};
 
-const ARTICLE_DIR: &str = "./articles";
+const WRITING_DIR: &str = "./writing";
 
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
 
@@ -38,11 +38,11 @@ fn main_blog_page_admin(_user: User) -> Template {
 
 #[derive(FromForm)]
 struct Upload<'r> {
-    article_id: Option<i64>,
+    document_id: Option<i64>,
     title: Option<String>,
-    title_image: Option<String>,
     blurb: Option<String>,
     files: Vec<TempFile<'r>>,
+    tags: Option<String>
 }
 
 enum DatabaseErrors {
@@ -54,7 +54,7 @@ enum DatabaseErrors {
 async fn upload_form(user: User, mut upload: Form<Upload<'_>>, db: Connection<SiteDatabase>) -> (Status, String){ 
 
     
-    let article_id = match upload.article_id {
+    let article_id = match upload.document_id {
         Some(x) => {
             // update database
             match update_article(&upload, db).await {
@@ -65,6 +65,7 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, db: Connection<Si
             
         },
         None => {
+            println!("creating new article");
             match create_article(&upload, db).await {
                 Ok(primary_key) => primary_key.to_string(),
                 Err(error) => return (Status::InternalServerError,error.0.to_string()),
@@ -72,7 +73,7 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, db: Connection<Si
         },
     };
 
-    let dir = format!("{ARTICLE_DIR}/{article_id}");
+    let dir = format!("{WRITING_DIR}/{article_id}");
 
     if let Err(error) = fs::create_dir_all(&dir){
         return (Status::InternalServerError,error.to_string())
@@ -119,11 +120,10 @@ impl BlogData {
 
 async fn create_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> Result<u64>{
 
-    let query_result = sqlx::query("INSERT INTO articles 
-    (is_published, visits, title, title_image, blurb) 
-    VALUES (false, 0, ?, ?, ?)")
+    let query_result = sqlx::query("INSERT INTO writing 
+    (is_published, visits, title, blurb) 
+    VALUES (false, 0, ?, ?)")
         .bind(&upload.title)
-        .bind(&upload.title_image)
         .bind(&upload.blurb)
         .execute(&mut *db)
         .await?;
@@ -134,15 +134,14 @@ async fn create_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDataba
  async fn update_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> Result<(), DatabaseErrors>{
     // let null_str = "Null".to_string();
     let title = upload.title.as_ref();
-    let title_image = upload.title_image.as_ref();
     let blurb = upload.blurb.as_ref();
-    let article_id = upload.article_id.unwrap();
+    let article_id = upload.document_id.unwrap();
 
-    if title.is_none() && title_image.is_none() && blurb.is_none() {
+    if title.is_none() && blurb.is_none() {
 
         //sqlx::query("SELECT EXISTS (SELECT * FROM articles WHERE article_id=?) AS result");
 
-        return match sqlx::query("SELECT EXISTS (SELECT * FROM articles WHERE article_id=?) AS result")
+        return match sqlx::query("SELECT EXISTS (SELECT * FROM writing WHERE id=?) AS result")
             .bind(&article_id)
             .fetch_one(&mut *db)
             .await {
@@ -158,7 +157,7 @@ async fn create_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDataba
         
     }
 
-    let mut query_builder = QueryBuilder::new("UPDATE articles SET ");
+    let mut query_builder = QueryBuilder::new("UPDATE writing SET ");
 
     // OK, this isn't the most elegant thing ever. I could have used Diesel for this
     // If I ever need to have this functionality somewhere else, I'll make it into
@@ -169,13 +168,6 @@ async fn create_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDataba
         query_builder.push("title =  ");
         query_builder.push_bind(title);
     }        
-    if let Some(title_image) = title_image {
-        if enable_seperator {
-            query_builder.push(", ");
-        } else { enable_seperator = true;};
-        query_builder.push("title_image = ");
-        query_builder.push_bind(title_image);
-    }
     if let Some(blurb) = blurb {
         if enable_seperator {
             query_builder.push(", ");
@@ -184,7 +176,7 @@ async fn create_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDataba
         query_builder.push_bind(blurb);
     }
 
-    query_builder.push(" WHERE article_id = ");
+    query_builder.push(" WHERE id = ");
     query_builder.push_bind(article_id);
 
 
@@ -204,7 +196,7 @@ async fn save_article_item( article_id: &String, file: &mut TempFile<'_>) -> io:
         .to_owned();
     let ext = content_type.extension().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "File has no extension"))?;  
     let full_name = [name, &ext.to_string()].join(".");
-    let dir = format!("{ARTICLE_DIR}/{article_id}");
+    let dir = format!("{WRITING_DIR}/{article_id}");
 
     file.persist_to( format!("{dir}/{full_name}")).await?;
     Ok(()) 
@@ -239,7 +231,7 @@ fn generate_article_html( guid: &String, file: &mut TempFile<'_>) -> Result<(), 
     let mut result = Vec::new();
     document.serialize(&mut result)?;
     let modified_html = String::from_utf8(result)?;
-    let html_path = format!("{ARTICLE_DIR}/{guid}/generated.html");
+    let html_path = format!("{WRITING_DIR}/{guid}/generated.html");
     _ = File::create(&html_path)?;
     fs::write(html_path, modified_html)?;
 
@@ -259,9 +251,9 @@ fn modify_dom_img_src(document: &NodeRef, guid: &String){
                         x if x.starts_with("https://") => x.to_string(),
                         x if x.starts_with("http://") => x.to_string(),
                         x if x.starts_with("./") => {
-                            format!("/articles/{guid}/image/").to_owned() + &x[2..]
+                            format!("/writing/{guid}/image/").to_owned() + &x[2..]
                         },
-                        x => format!("/articles/{guid}/image/").to_owned() + x
+                        x => format!("/writing/{guid}/image/").to_owned() + x
                     };
                     src.replace_range(..,&new_src);
                 }

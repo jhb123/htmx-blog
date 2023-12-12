@@ -8,10 +8,10 @@
     {% if admin %}
         <div class="form-container">
         <h1>Add or update documents</h1>
-        <form id="writing-add-update" hx-post='/writing/submit'>
+        <form id="writing-add-update" hx-post="/writing/upload" hx-encoding='multipart/form-data'>
             <div class="form-group">
-                <label for="article-id">Article I.D.</label>
-                <input type="text" id="article-id" name="article_id">
+                <label for="document_id">Document I.D.</label>
+                <input type="text" id="document_id" name="document_id">
             </div>
             <div class="form-group">
                 <label for="title">Title</label>
@@ -25,10 +25,16 @@
                 <label for="tags">Tags</label>
                 <input type="text" id="tags" name="tags">
             </div>
-            <input onChange={onFieldChange} id="articleFiles" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
+            <div class="form-group">
+                <label for="files">Files</label>
+                <input id="files"  name="files" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
+            </div>
             <input type="submit">
         </form>
         </div>
+
+    <script src="/js/postDocument.js"></script>
+]
     {% endif %}
     <h1>Writing</h1>
     {% for data in blog_data%}
