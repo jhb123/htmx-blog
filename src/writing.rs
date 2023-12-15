@@ -1,40 +1,20 @@
 use std::{default, fs::{self, File}, io};
 
+use chrono::Utc;
 use kuchiki::{traits::TendrilSink, NodeRef};
 use markdown::{to_html_with_options, Options, CompileOptions};
 use rocket::{fairing::AdHoc, routes, get, catchers, catch, post, FromForm, fs::TempFile, form::Form, http::Status};
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};
-use serde::Serialize;
-use sqlx::{QueryBuilder, Row};
+use rocket::serde::{Serialize, Deserialize};
+use sqlx::{QueryBuilder, Row, pool::PoolConnection, MySql};
+use sqlx::types::chrono::DateTime;
 
 use crate::{auth::api::User, db::SiteDatabase};
 
 const WRITING_DIR: &str = "./writing";
 
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
-
-pub fn stage() -> AdHoc {
-    AdHoc::on_ignite("blog-stage", |rocket| async {
-        //rocket.attach(ArticlesDb::init())
-        //    .attach(AdHoc::try_on_ignite("SQLx Migrations", run_migrations))
-        rocket.mount("/writing", routes![main_blog_page_admin, upload_form])
-        .register("/writing", catchers![main_blog_page])
-
-    })
-}
-
-#[catch(401)]
-fn main_blog_page() -> Template { 
-    let dummy_data = vec![BlogData::default();100];
-        Template::render("writing", context! { admin: false, blog_data: dummy_data })
-}
-
-#[get("/", rank=1)]
-fn main_blog_page_admin(_user: User) -> Template { 
-    let dummy_data = vec![BlogData::default();100];
-    Template::render("writing", context! { admin: true, blog_data: dummy_data  })
-}
 
 #[derive(FromForm)]
 struct Upload<'r> {
@@ -50,25 +30,82 @@ enum DatabaseErrors {
     BadQuery(String),
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
+#[serde(crate = "rocket::serde")]
+struct DocumentMetaData {
+    id: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    creation_date: Option<DateTime<chrono::Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    published_date: Option<DateTime<chrono::Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    is_published: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    visits: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<String>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // tags: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    blurb: Option<String>,
+}
+
+
+pub fn stage() -> AdHoc {
+    AdHoc::on_ignite("blog-stage", |rocket| async {
+        //rocket.attach(ArticlesDb::init())
+        //    .attach(AdHoc::try_on_ignite("SQLx Migrations", run_migrations))
+        rocket.mount("/writing", routes![main_blog_page_admin, upload_form])
+        .register("/writing", catchers![main_blog_page])
+
+    })
+}
+
+#[catch(401)]
+fn main_blog_page() -> Template { 
+    let dummy_data = vec![DocumentMetaData::default();100];
+        Template::render("writing", context! { admin: false, blog_data: dummy_data })
+}
+
+#[get("/", rank=1)]
+fn main_blog_page_admin(_user: User) -> Template { 
+    let dummy_data = vec![DocumentMetaData::default();100];
+    Template::render("writing", context! { admin: true, blog_data: dummy_data  })
+}
+
 #[post("/upload", data = "<upload>")]
-async fn upload_form(user: User, mut upload: Form<Upload<'_>>, db: Connection<SiteDatabase>) -> (Status, String){ 
+async fn upload_form(user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> (Status, Template){ 
 
     
+
     let article_id = match upload.document_id {
         Some(x) => {
             // update database
-            match update_article(&upload, db).await {
+            match update_article(&upload, &mut *db).await {
                 Ok(_) => x.to_string(),
-                Err(DatabaseErrors::ArticleIdNotFound) => return (Status::BadRequest, format!("No article with id {} exists",x)),
-                Err(DatabaseErrors::BadQuery(msg)) =>  return (Status::InternalServerError, msg),
-            }
-            
+                Err(DatabaseErrors::ArticleIdNotFound) => {
+                    let error_message = Template::render(
+                        "test", context! { info: format!("No article with id {} exists",x) }
+                    );
+                    return (Status::BadRequest, error_message)
+                },
+                Err(DatabaseErrors::BadQuery(msg)) => {
+                    let error_message = Template::render(
+                        "test", context! { info: msg }
+                    );   
+                    return (Status::InternalServerError, error_message)},
+            }            
         },
         None => {
             println!("creating new article");
-            match create_article(&upload, db).await {
+            match create_article(&upload, &mut *db).await {
                 Ok(primary_key) => primary_key.to_string(),
-                Err(error) => return (Status::InternalServerError,error.0.to_string()),
+                Err(error) => {
+                    let error_message = Template::render(
+                        "test", context! { info: error.0.to_string() }
+                    );   
+                    return (Status::InternalServerError, error_message)
+                },
             }
         },
     };
@@ -76,7 +113,10 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, db: Connection<Si
     let dir = format!("{WRITING_DIR}/{article_id}");
 
     if let Err(error) = fs::create_dir_all(&dir){
-        return (Status::InternalServerError,error.to_string())
+        let error_message = Template::render(
+            "test", context! { info: error.to_string() }
+        );   
+        return (Status::InternalServerError, error_message)
     }
 
     // Save each file that is included with the form. If its markdown, generate a html
@@ -85,53 +125,79 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, db: Connection<Si
         if let Some(content_type) = file.content_type() {
             if content_type.is_markdown() {
                 if let Err(error) = generate_article_html(&article_id, file){
-                    return (Status::InternalServerError,error.to_string())
+                    let error_message = Template::render(
+                        "test", context! { info: error.to_string() }
+                    );   
+                    return (Status::InternalServerError, error_message)
                 }
             }
             if let Err(error) = save_article_item(&article_id, file).await {
-                return (Status::InternalServerError,error.to_string())
+                let error_message = Template::render(
+                    "test", context! { info: error.to_string() }
+                );   
+                return (Status::InternalServerError, error_message)
             };
         } else {
-            return (Status::BadRequest,"Missing content type for upload".to_string())
+            let error_message = Template::render(
+                "test", context! { info: "Missing content type for upload".to_string() }
+            );   
+            return (Status::BadRequest, error_message)
         }
     }
-    (Status::Accepted,"uploaded".to_string())
-}
+    
 
+    // let res = get_document_list(db).await;
+    let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await;
 
-#[derive(Clone, Serialize)]
-struct BlogData {
-    title: String,
-    blurb: String,
-    date: String,
-    id: usize,
-}
-
-impl BlogData {
-    fn default() -> BlogData{
-        BlogData{
-            title:"test Title".to_string(),
-            blurb:"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".to_string(),
-            date:"01/12/2023".to_string(),
-            id: 10000
+    match res {
+        Ok(documents) => {
+            let template = Template::render("document_list", context! { blog_data: documents });
+            return (Status::Accepted,template)
+        },
+        Err(err) => {
+            let error_message = Template::render(
+                "test", context! { info: format!("{:?}",err) }
+            );   
+            return (Status::InternalServerError, error_message)
         }
     }
+
 }
 
-async fn create_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> Result<u64>{
+
+
+
+// #[get("/list")]
+// async fn list(mut db: Connection<SiteDatabase>) -> Result<Template> { 
+//     let document_data = get_article_list(db).await?;
+//     Ok(Template::render("writing", context! { document_data: document_data  }))
+// }
+
+async fn get_document_list(db: &mut PoolConnection<MySql>) -> Result<Template>{
+    let res: Vec<DocumentMetaData>  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(db).await?;
+
+    // let res2: Vec<DocumentMetaData>  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await?;
+
+    Ok(Template::render("document_list", context! { documents: res }))
+}
+
+// fn render_document_list(data: Vec<DocumentMetaData>) -> Template {
+// }
+
+async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64>{
 
     let query_result = sqlx::query("INSERT INTO writing 
     (is_published, visits, title, blurb) 
     VALUES (false, 0, ?, ?)")
         .bind(&upload.title)
         .bind(&upload.blurb)
-        .execute(&mut *db)
+        .execute(db)
         .await?;
 
     Ok(query_result.last_insert_id())
  }
 
- async fn update_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> Result<(), DatabaseErrors>{
+ async fn update_article(upload: &Form<Upload<'_>>,  db: &mut PoolConnection<MySql>) -> Result<(), DatabaseErrors>{
     // let null_str = "Null".to_string();
     let title = upload.title.as_ref();
     let blurb = upload.blurb.as_ref();
@@ -143,7 +209,7 @@ async fn create_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDataba
 
         return match sqlx::query("SELECT EXISTS (SELECT * FROM writing WHERE id=?) AS result")
             .bind(&article_id)
-            .fetch_one(&mut *db)
+            .fetch_one(db)
             .await {
                 Ok(result) => {
                     if result.get::<i64,_>(0) == 0 {
@@ -184,6 +250,7 @@ async fn create_article(upload: &Form<Upload<'_>>, mut db: Connection<SiteDataba
         Ok(_) => Ok(()),
         Err(error) => Err(DatabaseErrors::BadQuery(error.to_string()))
     }
+    
 
 }
 
@@ -259,6 +326,20 @@ fn modify_dom_img_src(document: &NodeRef, guid: &String){
                 }
                 None => {}
             }        
+        }
+    }
+}
+
+impl DocumentMetaData {
+    fn default() -> DocumentMetaData{
+        DocumentMetaData{
+            title: Some("test Title".to_string()),
+            blurb:Some("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".to_string()),
+            id: 10000,
+            creation_date: Some(Utc::now()),
+            published_date: Some(Utc::now()),
+            is_published: Some(true),
+            visits: Some(100),
         }
     }
 }

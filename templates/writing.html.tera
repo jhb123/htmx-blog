@@ -6,9 +6,9 @@
 
 {% block content %}
     {% if admin %}
-        <div class="form-container">
+    <div class="form-container">
         <h1>Add or update documents</h1>
-        <form id="writing-add-update" hx-post="/writing/upload" hx-encoding='multipart/form-data'>
+        <form id="writing-add-update" hx-post="/writing/upload" hx-encoding='multipart/form-data' hx-swap="none" hx-on::after-request="this.reset()">
             <div class="form-group">
                 <label for="document_id">Document I.D.</label>
                 <input type="text" id="document_id" name="document_id">
@@ -31,17 +31,10 @@
             </div>
             <input type="submit">
         </form>
-        </div>
-
+    </div>
     <script src="/js/postDocument.js"></script>
-]
     {% endif %}
     <h1>Writing</h1>
-    {% for data in blog_data%}
-        <div class="writing-summary">
-            <h2>{{data.title}}</h2>
-            <p>{{data.date}}</p>
-            <p>{{data.blurb}}</p>
-        </div>
-    {% endfor %}
+    {% include "document_list" %}
+
 {% endblock %}
