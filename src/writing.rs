@@ -56,21 +56,21 @@ pub fn stage() -> AdHoc {
         //rocket.attach(ArticlesDb::init())
         //    .attach(AdHoc::try_on_ignite("SQLx Migrations", run_migrations))
         rocket.mount("/writing", routes![main_blog_page_admin, upload_form])
-        .register("/writing", catchers![main_blog_page])
+        // .register("/writing", catchers![main_blog_page])
 
     })
 }
 
-#[catch(401)]
-fn main_blog_page() -> Template { 
-    let dummy_data = vec![DocumentMetaData::default();100];
-        Template::render("writing", context! { admin: false, blog_data: dummy_data })
-}
 
 #[get("/", rank=1)]
-fn main_blog_page_admin(_user: User) -> Template { 
-    let dummy_data = vec![DocumentMetaData::default();100];
-    Template::render("writing", context! { admin: true, blog_data: dummy_data  })
+async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabase>) -> Template { 
+    let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await.unwrap_or(vec![]);
+
+    match user {
+        Some(_) => Template::render("writing",context!{admin:true,blog_data:data}),
+        None => Template::render("writing",context!{admin:false, blog_data: data}), 
+    }
+
 }
 
 #[post("/upload", data = "<upload>")]

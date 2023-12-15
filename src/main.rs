@@ -21,7 +21,7 @@ async fn rocket() ->  _ {
         .attach(cv::stage())
         .attach(AdHoc::config::<AppConfig>())
         .attach(Template::fairing())
-        .register("/", catchers![index])
+        // .register("/", catchers![index])
 
 
 }
@@ -31,14 +31,18 @@ async fn rocket() ->  _ {
 //     Template::render("index", context! { title: "Hello, World", admin: false })
 // }
 
-#[catch(401)]
-fn index() -> Template { 
-        Template::render("index", context! { admin: false })
-}
+// #[catch(401)]
+// fn index() -> Template { 
+//         Template::render("index", context! { admin: false })
+// }
 
 #[get("/", rank=1)]
-fn index_admin(_user: User) -> Template { 
-        Template::render("index", context! { admin: true })
+fn index_admin(user: Option<User>) -> Template { 
+
+        match user {
+            Some(_) =>  Template::render("index", context! { admin: true }),
+            None =>  Template::render("index", context! { admin: false })
+        }
 }
 
 #[get("/js/<path..>", rank = 2)]
