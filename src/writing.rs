@@ -1,9 +1,9 @@
-use std::{default, fs::{self, File}, io};
+use std::{default, fs::{self, File}, io, fmt};
 
 use chrono::Utc;
 use kuchiki::{traits::TendrilSink, NodeRef};
 use markdown::{to_html_with_options, Options, CompileOptions};
-use rocket::{fairing::AdHoc, routes, get, catchers, catch, post, FromForm, fs::TempFile, form::Form, http::Status};
+use rocket::{fairing::AdHoc, routes, get, catchers, catch, post, FromForm, fs::TempFile, form::{Form, Strict}, http::Status};
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};
 use rocket::serde::{Serialize, Deserialize};
@@ -18,17 +18,64 @@ type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T
 
 #[derive(FromForm)]
 struct Upload<'r> {
-    document_id: Option<i64>,
-    title: Option<String>,
-    blurb: Option<String>,
+    document_id: Option<u64>,
+    title: String,
+    blurb: String,
     files: Vec<TempFile<'r>>,
     tags: Option<String>
 }
 
-enum DatabaseErrors {
-    ArticleIdNotFound,
-    BadQuery(String),
+// impl Upload<'_> {
+
+
+trait RenderErrorTemplate {
+    fn to_template(&self) -> Template;
 }
+
+impl RenderErrorTemplate for DatabaseErrors {
+    fn to_template(&self) -> Template {
+        Template::render("test", context! { info: format!("{}",self) })
+    }
+} 
+
+impl RenderErrorTemplate for std::io::Error {
+    fn to_template(&self) -> Template {
+        Template::render("test", context! { info: format!("{}",self) })
+    }
+}
+
+impl RenderErrorTemplate for dyn std::error::Error {
+    fn to_template(&self) -> Template {
+        Template::render("test", context! { info: format!("{}",self) })
+    }
+} 
+
+
+#[derive(Debug)]
+enum DatabaseErrors {
+    IdNotFound(String),
+    BadQuery(String),
+    SQLx(String)
+}
+
+impl From<sqlx::Error> for DatabaseErrors {
+    fn from(error: sqlx::Error) -> Self {
+        DatabaseErrors::SQLx(format!("Database error: {}", error))
+        }
+    }
+
+
+impl fmt::Display for DatabaseErrors {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DatabaseErrors::IdNotFound(message) => write!(f, "ID not found: {}", message),
+            DatabaseErrors::BadQuery(message) => write!(f, "Bad query: {}", message),
+            DatabaseErrors::SQLx(message) => write!(f, "SQLx error: {}", message),
+        }
+    }
+}
+
+
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 #[serde(crate = "rocket::serde")]
@@ -67,7 +114,7 @@ async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabas
     let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await.unwrap_or(vec![]);
 
     match user {
-        Some(_) => Template::render("writing",context!{admin:true,blog_data:data}),
+        Some(_) => Template::render("writing",context!{admin:true,blog_data: data}),
         None => Template::render("writing",context!{admin:false, blog_data: data}), 
     }
 
@@ -75,48 +122,30 @@ async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabas
 
 #[post("/upload", data = "<upload>")]
 async fn upload_form(user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> (Status, Template){ 
+ 
 
-    
-
-    let article_id = match upload.document_id {
-        Some(x) => {
-            // update database
-            match update_article(&upload, &mut *db).await {
-                Ok(_) => x.to_string(),
-                Err(DatabaseErrors::ArticleIdNotFound) => {
-                    let error_message = Template::render(
-                        "test", context! { info: format!("No article with id {} exists",x) }
-                    );
-                    return (Status::BadRequest, error_message)
-                },
-                Err(DatabaseErrors::BadQuery(msg)) => {
-                    let error_message = Template::render(
-                        "test", context! { info: msg }
-                    );   
-                    return (Status::InternalServerError, error_message)},
-            }            
-        },
-        None => {
-            println!("creating new article");
-            match create_article(&upload, &mut *db).await {
-                Ok(primary_key) => primary_key.to_string(),
-                Err(error) => {
-                    let error_message = Template::render(
-                        "test", context! { info: error.0.to_string() }
-                    );   
-                    return (Status::InternalServerError, error_message)
-                },
-            }
-        },
+    let res_article_id = match upload.document_id {
+        Some(x) =>  update_article(&upload, &mut *db).await.map(|_| x),
+        None => create_article(&upload, &mut *db).await
     };
+    
+    let article_id = match res_article_id.map_err(|db_error| {
+        match db_error {
+            DatabaseErrors::IdNotFound(_) => (Status::BadRequest, db_error.to_template()),
+            DatabaseErrors::BadQuery(_) => (Status::BadRequest, db_error.to_template()),
+            DatabaseErrors::SQLx(_) => (Status::InternalServerError, db_error.to_template()),
+        }
+
+    }) {
+        Ok(value) => value.to_string(),
+        Err((status, template)) => return (status, template),
+    };
+
 
     let dir = format!("{WRITING_DIR}/{article_id}");
 
     if let Err(error) = fs::create_dir_all(&dir){
-        let error_message = Template::render(
-            "test", context! { info: error.to_string() }
-        );   
-        return (Status::InternalServerError, error_message)
+        return (Status::InternalServerError, error.to_template())
     }
 
     // Save each file that is included with the form. If its markdown, generate a html
@@ -125,17 +154,11 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, mut db: Connectio
         if let Some(content_type) = file.content_type() {
             if content_type.is_markdown() {
                 if let Err(error) = generate_article_html(&article_id, file){
-                    let error_message = Template::render(
-                        "test", context! { info: error.to_string() }
-                    );   
-                    return (Status::InternalServerError, error_message)
+                    return (Status::InternalServerError, error.to_template())
                 }
             }
             if let Err(error) = save_article_item(&article_id, file).await {
-                let error_message = Template::render(
-                    "test", context! { info: error.to_string() }
-                );   
-                return (Status::InternalServerError, error_message)
+                return (Status::InternalServerError, error.to_template())
             };
         } else {
             let error_message = Template::render(
@@ -147,7 +170,9 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, mut db: Connectio
     
 
     // let res = get_document_list(db).await;
-    let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await;
+    let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db)
+        .await
+        .map_err(|e| DatabaseErrors::SQLx(e.to_string()));
 
     match res {
         Ok(documents) => {
@@ -155,16 +180,11 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, mut db: Connectio
             return (Status::Accepted,template)
         },
         Err(err) => {
-            let error_message = Template::render(
-                "test", context! { info: format!("{:?}",err) }
-            );   
-            return (Status::InternalServerError, error_message)
+            return (Status::InternalServerError, err.to_template())
         }
     }
 
 }
-
-
 
 
 // #[get("/list")]
@@ -173,18 +193,18 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, mut db: Connectio
 //     Ok(Template::render("writing", context! { document_data: document_data  }))
 // }
 
-async fn get_document_list(db: &mut PoolConnection<MySql>) -> Result<Template>{
-    let res: Vec<DocumentMetaData>  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(db).await?;
+// async fn get_document_list(db: &mut PoolConnection<MySql>) -> Result<Template>{
+//     let res: Vec<DocumentMetaData>  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(db).await?;
 
-    // let res2: Vec<DocumentMetaData>  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await?;
+//     // let res2: Vec<DocumentMetaData>  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await?;
 
-    Ok(Template::render("document_list", context! { documents: res }))
-}
+//     Ok(Template::render("document_list", context! { documents: res }))
+// }
 
 // fn render_document_list(data: Vec<DocumentMetaData>) -> Template {
 // }
 
-async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64>{
+async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64, DatabaseErrors>{
 
     let query_result = sqlx::query("INSERT INTO writing 
     (is_published, visits, title, blurb) 
@@ -199,21 +219,25 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
 
  async fn update_article(upload: &Form<Upload<'_>>,  db: &mut PoolConnection<MySql>) -> Result<(), DatabaseErrors>{
     // let null_str = "Null".to_string();
-    let title = upload.title.as_ref();
-    let blurb = upload.blurb.as_ref();
-    let article_id = upload.document_id.unwrap();
+    let title = if (&upload.title != "") {Some(&upload.title)} else {None};//.
+    let blurb = if (&upload.blurb != "") {Some(&upload.blurb)} else {None};//.
+    let document_id = upload.document_id.unwrap();
+
+    println!("updating article");
+    println!("title is {:?}", title);    
+    println!("blurb is {:?}", blurb);    
 
     if title.is_none() && blurb.is_none() {
 
         //sqlx::query("SELECT EXISTS (SELECT * FROM articles WHERE article_id=?) AS result");
 
         return match sqlx::query("SELECT EXISTS (SELECT * FROM writing WHERE id=?) AS result")
-            .bind(&article_id)
+            .bind(&document_id)
             .fetch_one(db)
             .await {
                 Ok(result) => {
                     if result.get::<i64,_>(0) == 0 {
-                        return Err(DatabaseErrors::ArticleIdNotFound)
+                        return Err(DatabaseErrors::IdNotFound(format!("No document found with ID {}", document_id)))
                     } else {
                         return Ok(())
                     }
@@ -243,7 +267,7 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
     }
 
     query_builder.push(" WHERE id = ");
-    query_builder.push_bind(article_id);
+    query_builder.push_bind(document_id);
 
 
     match query_builder.build().execute(&mut *db).await {
@@ -272,6 +296,7 @@ async fn save_article_item( article_id: &String, file: &mut TempFile<'_>) -> io:
 fn generate_article_html( guid: &String, file: &mut TempFile<'_>) -> Result<(), Box<dyn std::error::Error>> {
     
     // Read the markdown to a string
+    let tm = file.path();
     let markdown_path = file.path().ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Markdown file not found"))?;
     let markdown = fs::read_to_string(markdown_path)?;
     
