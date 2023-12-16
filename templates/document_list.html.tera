@@ -1,5 +1,6 @@
 {% for data in blog_data%}
     <div class="writing-summary">
+        <a href="writing/{{data.id}}">link</a>
         <h2>{{data.title | default(value='-') }}</h2>
         <p>created on: {{data.creation_date | default(value='-') }}</p>
         <p>{{data.blurb | default(value='-') }}</p>

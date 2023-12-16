@@ -12,6 +12,7 @@ Link to [Duck Duck Go](https://duckduckgo.com)
 <img src="./test.png" alt="drawing" style="width:40px;"/>
 <img src= "./test.png" alt="drawing" style="width:40px;"/>
 <img src= " ./test.png" alt="drawing" style="width:40px;"/>
+## this is supposed to be broken
 <img alt="drawing" style="width:40px;"/>
 
 ## external sources
@@ -28,6 +29,7 @@ Link to [Duck Duck Go](https://duckduckgo.com)
 - [this is a test file](#this-is-a-test-file)
   - [Scary strings](#scary-strings)
   - [html images](#html-images)
+  - [this is supposed to be broken](#this-is-supposed-to-be-broken)
   - [external sources](#external-sources)
   - [Emojis](#emojis)
 - [test file from the internet](#test-file-from-the-internet)

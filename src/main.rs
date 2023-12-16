@@ -14,7 +14,7 @@ use htmx_blog::config::AppConfig;
 async fn rocket() ->  _ {
 
     rocket::build()
-        .mount("/", routes![index_admin, static_resources, js_resources])
+        .mount("/", routes![index_admin, static_resources, js_resources, css_resources])
         .attach(db::stage())
         .attach(api::stage())
         .attach(writing::stage())
@@ -39,7 +39,13 @@ async fn js_resources(path: PathBuf) -> Option<NamedFile> {
     NamedFile::open(full_path).await.ok()
 }
 
-#[get("/<path..>", rank = 3)]
+#[get("/styles.css", rank = 3)]
+async fn css_resources() -> Option<NamedFile> {
+    let full_path = Path::new("./static/styles.css");
+    NamedFile::open(full_path).await.ok()
+}
+
+#[get("/<path..>", rank = 4)]
 async fn static_resources(path: PathBuf) -> Option<NamedFile> {
     let base_path = Path::new("./static/");
     let full_path = base_path.join(path);

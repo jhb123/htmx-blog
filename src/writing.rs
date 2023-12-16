@@ -1,11 +1,11 @@
-use std::{default, fs::{self, File}, io, fmt};
-
-use chrono::Utc;
+use std::{ fs::{self, File}, io, fmt};
 use kuchiki::{traits::TendrilSink, NodeRef};
 use markdown::{to_html_with_options, Options, CompileOptions};
-use rocket::{fairing::AdHoc, routes, get, catchers, catch, post, FromForm, fs::TempFile, form::{Form, Strict}, http::Status};
+use rocket::{fairing::AdHoc, routes, get, post, FromForm, fs::{TempFile, NamedFile}, form::Form, http::Status, response::status::NotFound};
+use rocket::response::content::RawHtml;
+
 use rocket_db_pools::Connection;
-use rocket_dyn_templates::{Template, context};
+use rocket_dyn_templates::{Template, context, tera::{Tera, Context}};
 use rocket::serde::{Serialize, Deserialize};
 use sqlx::{QueryBuilder, Row, pool::PoolConnection, MySql};
 use sqlx::types::chrono::DateTime;
@@ -45,6 +45,12 @@ impl RenderErrorTemplate for std::io::Error {
 }
 
 impl RenderErrorTemplate for dyn std::error::Error {
+    fn to_template(&self) -> Template {
+        Template::render("test", context! { info: format!("{}",self) })
+    }
+} 
+
+impl RenderErrorTemplate for sqlx::Error {
     fn to_template(&self) -> Template {
         Template::render("test", context! { info: format!("{}",self) })
     }
@@ -100,11 +106,7 @@ struct DocumentMetaData {
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("blog-stage", |rocket| async {
-        //rocket.attach(ArticlesDb::init())
-        //    .attach(AdHoc::try_on_ignite("SQLx Migrations", run_migrations))
-        rocket.mount("/writing", routes![main_blog_page_admin, upload_form])
-        // .register("/writing", catchers![main_blog_page])
-
+        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image])
     })
 }
 
@@ -121,7 +123,7 @@ async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabas
 }
 
 #[post("/upload", data = "<upload>")]
-async fn upload_form(user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> (Status, Template){ 
+async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> (Status, Template){ 
  
 
     let res_article_id = match upload.document_id {
@@ -187,22 +189,32 @@ async fn upload_form(user: User, mut upload: Form<Upload<'_>>, mut db: Connectio
 }
 
 
-// #[get("/list")]
-// async fn list(mut db: Connection<SiteDatabase>) -> Result<Template> { 
-//     let document_data = get_article_list(db).await?;
-//     Ok(Template::render("writing", context! { document_data: document_data  }))
-// }
+#[get("/<article_id>")]
+async fn get_article(article_id: &str, mut db: Connection<SiteDatabase>) -> Template { 
 
-// async fn get_document_list(db: &mut PoolConnection<MySql>) -> Result<Template>{
-//     let res: Vec<DocumentMetaData>  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(db).await?;
+    let path = format!("{WRITING_DIR}/{article_id}/generated.html");
+    let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?").bind(article_id).fetch_one(&mut *db).await;
 
-//     // let res2: Vec<DocumentMetaData>  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await?;
+    let document_title = match res {
+        Ok(data) => data.title.unwrap_or("Document".to_string()),
+        Err(err) => return err.to_template(),
+    };
 
-//     Ok(Template::render("document_list", context! { documents: res }))
-// }
+    match fs::read_to_string(path) {
+        Ok(html) => {
+            Template::render("document", context! {raw_data: html, document_title: document_title })
+        },
+        Err(err) => err.to_template()
 
-// fn render_document_list(data: Vec<DocumentMetaData>) -> Template {
-// }
+    }
+}
+
+#[get("/<article_id>/image/<name>")]
+async fn get_image(article_id: &str, name: &str) -> Result<NamedFile, NotFound<String>> { 
+    let path = format!("{WRITING_DIR}/{article_id}/{name}");
+    NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()))
+}
+
 
 async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64, DatabaseErrors>{
 
@@ -219,8 +231,8 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
 
  async fn update_article(upload: &Form<Upload<'_>>,  db: &mut PoolConnection<MySql>) -> Result<(), DatabaseErrors>{
     // let null_str = "Null".to_string();
-    let title = if (&upload.title != "") {Some(&upload.title)} else {None};//.
-    let blurb = if (&upload.blurb != "") {Some(&upload.blurb)} else {None};//.
+    let title = if &upload.title != "" {Some(&upload.title)} else {None};//.
+    let blurb = if &upload.blurb != "" {Some(&upload.blurb)} else {None};//.
     let document_id = upload.document_id.unwrap();
 
     println!("updating article");
@@ -296,7 +308,6 @@ async fn save_article_item( article_id: &String, file: &mut TempFile<'_>) -> io:
 fn generate_article_html( guid: &String, file: &mut TempFile<'_>) -> Result<(), Box<dyn std::error::Error>> {
     
     // Read the markdown to a string
-    let tm = file.path();
     let markdown_path = file.path().ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Markdown file not found"))?;
     let markdown = fs::read_to_string(markdown_path)?;
     
@@ -309,6 +320,7 @@ fn generate_article_html( guid: &String, file: &mut TempFile<'_>) -> Result<(), 
         &Options {
         compile: CompileOptions {
           allow_dangerous_html: true,
+          allow_dangerous_protocol: true,
           ..CompileOptions::default()
         },
         ..Options::default()
@@ -319,13 +331,18 @@ fn generate_article_html( guid: &String, file: &mut TempFile<'_>) -> Result<(), 
 
     modify_dom_img_src(&document, &guid);
     
-    // serialise the modified DOM to a html file
+    
+    // // serialise the modified DOM to a html file
     let mut result = Vec::new();
     document.serialize(&mut result)?;
     let modified_html = String::from_utf8(result)?;
+    
+    let i1 =  "<html><head></head><body>".len();
+    let i2 =  modified_html.len() - "</body></html>".len();
+
     let html_path = format!("{WRITING_DIR}/{guid}/generated.html");
     _ = File::create(&html_path)?;
-    fs::write(html_path, modified_html)?;
+    fs::write(html_path, modified_html[i1..i2].to_string())?;
 
     Ok(())   
 }
@@ -355,16 +372,16 @@ fn modify_dom_img_src(document: &NodeRef, guid: &String){
     }
 }
 
-impl DocumentMetaData {
-    fn default() -> DocumentMetaData{
-        DocumentMetaData{
-            title: Some("test Title".to_string()),
-            blurb:Some("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".to_string()),
-            id: 10000,
-            creation_date: Some(Utc::now()),
-            published_date: Some(Utc::now()),
-            is_published: Some(true),
-            visits: Some(100),
-        }
-    }
-}
+// impl DocumentMetaData {
+//     fn default() -> DocumentMetaData{
+//         DocumentMetaData{
+//             title: Some("test Title".to_string()),
+//             blurb:Some("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".to_string()),
+//             id: 10000,
+//             creation_date: Some(Utc::now()),
+//             published_date: Some(Utc::now()),
+//             is_published: Some(true),
+//             visits: Some(100),
+//         }
+//     }
+// }
