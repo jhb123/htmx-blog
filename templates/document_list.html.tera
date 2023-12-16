@@ -1,12 +1,3 @@
 {% for data in blog_data%}
-    <div class="writing-summary">
-        <a href="writing/{{data.id}}">link</a>
-        <h2>{{data.title | default(value='-') }}</h2>
-        <p>created on: {{data.creation_date | default(value='-') }}</p>
-        <p>{{data.blurb | default(value='-') }}</p>
-        <p>ID: {{data.id | default(value='-') }}</p>
-        <p>Is published: {{data.published_date | default(value='-') }}</p>
-        <p>published date: {{data.is_published | default(value='-') }}</p>
-        <p>Number of visits: {{data.visits | default(value='-') }}</p>
-    </div>
+    {% include "document_list_item" %}
 {% endfor %}

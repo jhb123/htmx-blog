@@ -6,7 +6,7 @@
 
 {% block content %}
     {% if admin %}
-    <div class="form-container">
+    <div class="form-container" id="admin-form-container">
         <h1>Add or update documents</h1>
         <form id="writing-add-update" hx-post="/writing/upload" hx-encoding='multipart/form-data' hx-swap="innerHTML" hx-target="#documents" hx-on::after-request="this.reset()">
             <div class="form-group">

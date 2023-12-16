@@ -1,4 +1,6 @@
-document.body.addEventListener('htmx:configRequest', function(evt) {
+var adminFormContainer = document.getElementById("admin-form-container");
+
+adminFormContainer.addEventListener('htmx:configRequest', function(evt) {
     console.log(evt.detail)
     let files = evt.detail.parameters.files
     console.log(files)

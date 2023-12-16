@@ -12,6 +12,14 @@ use sqlx::types::chrono::DateTime;
 
 use crate::{auth::api::User, db::SiteDatabase};
 
+
+pub fn stage() -> AdHoc {
+    AdHoc::on_ignite("blog-stage", |rocket| async {
+        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish])
+    })
+}
+
+
 const WRITING_DIR: &str = "./writing";
 
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
@@ -103,12 +111,6 @@ struct DocumentMetaData {
     blurb: Option<String>,
 }
 
-
-pub fn stage() -> AdHoc {
-    AdHoc::on_ignite("blog-stage", |rocket| async {
-        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image])
-    })
-}
 
 
 #[get("/", rank=1)]
@@ -215,6 +217,30 @@ async fn get_image(article_id: &str, name: &str) -> Result<NamedFile, NotFound<S
     NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()))
 }
 
+#[get("/<article_id>?<publish>")]
+async fn publish(_user: User, mut db: Connection<SiteDatabase>, article_id: i64, publish: bool) -> Template { 
+    println!("is published {}", publish);
+    let time  = if publish { Some(chrono::Utc::now())} else {None};
+
+    let res = sqlx::query("UPDATE writing SET is_published = ?, published_date = ? WHERE id = ?")
+        .bind(publish)
+        .bind(time)
+        .bind(article_id)
+        .execute(&mut *db)
+        .await;
+
+    match res {
+        Ok(_) => {
+            let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?").bind(article_id).fetch_one(&mut *db).await.unwrap();
+
+            Template::render("document_list_item", context! {admin: true, data: data })
+        },
+        Err(err) => err.to_template(),
+    }
+        
+
+    // Ok(format!("set article {0} to published={1}",article_id, is_published))
+}
 
 async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64, DatabaseErrors>{
 
