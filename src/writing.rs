@@ -332,11 +332,11 @@ fn generate_article_html( guid: &String, file: &mut TempFile<'_>) -> Result<(), 
     modify_dom_img_src(&document, &guid);
     
     
-    // // serialise the modified DOM to a html file
+    // serialise the modified DOM to a html file
     let mut result = Vec::new();
     document.serialize(&mut result)?;
     let modified_html = String::from_utf8(result)?;
-    
+    // the tree gets these tags, which we don't need.
     let i1 =  "<html><head></head><body>".len();
     let i2 =  modified_html.len() - "</body></html>".len();
 
