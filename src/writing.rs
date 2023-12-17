@@ -2,10 +2,9 @@ use std::{ fs::{self, File}, io, fmt};
 use kuchiki::{traits::TendrilSink, NodeRef};
 use markdown::{to_html_with_options, Options, CompileOptions};
 use rocket::{fairing::AdHoc, routes, get, post, FromForm, fs::{TempFile, NamedFile}, form::Form, http::Status, response::status::NotFound, delete};
-use rocket::response::content::RawHtml;
 
 use rocket_db_pools::Connection;
-use rocket_dyn_templates::{Template, context, tera::{Tera, Context}};
+use rocket_dyn_templates::{Template, context};
 use rocket::serde::{Serialize, Deserialize};
 use sqlx::{QueryBuilder, Row, pool::PoolConnection, MySql};
 use sqlx::types::chrono::DateTime;
@@ -99,8 +98,7 @@ struct DocumentMetaData {
     creation_date: Option<DateTime<chrono::Utc>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     published_date: Option<DateTime<chrono::Utc>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    is_published: Option<bool>,
+    is_published: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     visits: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -117,9 +115,14 @@ struct DocumentMetaData {
 async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabase>) -> Template { 
     let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await.unwrap_or(vec![]);
 
+    let filtered_data = match user {
+        Some(_) => data,
+        None => data.into_iter().filter(|item| item.is_published ).collect()
+    };
+
     match user {
-        Some(_) => Template::render("writing",context!{admin:true,blog_data: data}),
-        None => Template::render("writing",context!{admin:false, blog_data: data}), 
+        Some(_) => Template::render("writing",context!{admin:true,blog_data: filtered_data}),
+        None => Template::render("writing",context!{admin:false, blog_data: filtered_data}), 
     }
 
 }
@@ -180,7 +183,7 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
 
     match res {
         Ok(documents) => {
-            let template = Template::render("document_list", context! { blog_data: documents });
+            let template = Template::render("document_list", context! { admin: true, blog_data: documents });
             return (Status::Accepted,template)
         },
         Err(err) => {
@@ -211,13 +214,13 @@ async fn get_article(article_id: &str, mut db: Connection<SiteDatabase>) -> Temp
     }
 }
 
-#[get("/<article_id>/image/<name>")]
+#[get("/<article_id>/image/<name>", rank=2)]
 async fn get_image(article_id: &str, name: &str) -> Result<NamedFile, NotFound<String>> { 
     let path = format!("{WRITING_DIR}/{article_id}/{name}");
     NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()))
 }
 
-#[get("/<article_id>?<publish>")]
+#[post("/<article_id>/publish/<publish>")]
 async fn publish(_user: User, mut db: Connection<SiteDatabase>, article_id: i64, publish: bool) -> Template { 
     println!("is published {}", publish);
     let time  = if publish { Some(chrono::Utc::now())} else {None};
