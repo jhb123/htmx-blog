@@ -1,7 +1,7 @@
 use std::{ fs::{self, File}, io, fmt};
 use kuchiki::{traits::TendrilSink, NodeRef};
 use markdown::{to_html_with_options, Options, CompileOptions};
-use rocket::{fairing::AdHoc, routes, get, post, FromForm, fs::{TempFile, NamedFile}, form::Form, http::Status, response::status::NotFound, delete};
+use rocket::{fairing::AdHoc, routes, get, post, FromForm, fs::{TempFile, NamedFile}, form::Form, http::Status, response::status::NotFound, delete, State};
 
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};
@@ -9,7 +9,7 @@ use rocket::serde::{Serialize, Deserialize};
 use sqlx::{QueryBuilder, Row, pool::PoolConnection, MySql};
 use sqlx::types::chrono::DateTime;
 
-use crate::{auth::api::User, db::SiteDatabase};
+use crate::{auth::api::User, db::SiteDatabase, config::AppConfig};
 
 
 pub fn stage() -> AdHoc {
@@ -19,17 +19,18 @@ pub fn stage() -> AdHoc {
 }
 
 
-const WRITING_DIR: &str = "./writing";
+//const WRITING_DIR: &str = "./writing";
 
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
 
+#[allow(unused)]
 #[derive(FromForm)]
 struct Upload<'r> {
     document_id: Option<u64>,
     title: String,
     blurb: String,
     files: Vec<TempFile<'r>>,
-    tags: Option<String>
+    tags: Option<String> // will implement this one day
 }
 
 // impl Upload<'_> {
@@ -128,7 +129,7 @@ async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabas
 }
 
 #[post("/upload", data = "<upload>")]
-async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> (Status, Template){ 
+async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> (Status, Template){ 
  
 
     let res_document_id = match upload.document_id {
@@ -148,8 +149,8 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
         Err((status, template)) => return (status, template),
     };
 
-
-    let dir = format!("{WRITING_DIR}/{document_id}");
+    //let base_dir = app_config.writing_dir;
+    let dir = format!("{0}/{1}",app_config.writing_dir, document_id);
 
     if let Err(error) = fs::create_dir_all(&dir){
         return (Status::InternalServerError, error.to_template())
@@ -160,11 +161,11 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
     for file in upload.files.iter_mut(){
         if let Some(content_type) = file.content_type() {
             if content_type.is_markdown() {
-                if let Err(error) = generate_article_html(&document_id, file){
+                if let Err(error) = generate_article_html(&document_id, file, &app_config.writing_dir){
                     return (Status::InternalServerError, error.to_template())
                 }
             }
-            if let Err(error) = save_article_item(&document_id, file).await {
+            if let Err(error) = save_article_item(&document_id, file, &app_config.writing_dir).await {
                 return (Status::InternalServerError, error.to_template())
             };
         } else {
@@ -195,7 +196,7 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
 
 
 #[get("/<document_id>")]
-async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>) -> (Status, Template) { 
+async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> (Status, Template) { 
 
     let res = sqlx::query("UPDATE writing SET visits = visits+1 WHERE id = ?")
     .bind(document_id)
@@ -205,8 +206,9 @@ async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>) -> (St
     if res.is_err() {
         return (Status::InternalServerError, res.unwrap_err().to_template())
     }
+    let path = format!("{0}/{1}/generated.html",app_config.writing_dir, document_id);
 
-    let path = format!("{WRITING_DIR}/{document_id}/generated.html");
+    //let path = format!("{WRITING_DIR}/{document_id}/generated.html");
     let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?")
         .bind(document_id)
         .fetch_one(&mut *db)
@@ -228,8 +230,8 @@ async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>) -> (St
 }
 
 #[get("/<document_id>/image/<name>", rank=2)]
-async fn get_image(document_id: &str, name: &str) -> Result<NamedFile, NotFound<String>> { 
-    let path = format!("{WRITING_DIR}/{document_id}/{name}");
+async fn get_image(document_id: &str, name: &str, app_config: &State<AppConfig>) -> Result<NamedFile, NotFound<String>> {
+    let path = format!("{0}/{1}/{2}",app_config.writing_dir, document_id, name);
     NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()))
 }
 
@@ -258,14 +260,15 @@ async fn publish(_user: User, mut db: Connection<SiteDatabase>, document_id: i64
     // Ok(format!("set article {0} to published={1}",document_id, is_published))
 }
 
+#[allow(unused)]
 #[delete("/<document_id>/delete")]
-async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, document_id: i64)-> Result<()> {
+async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, document_id: i64, app_config: &State<AppConfig>)-> Result<()> {
     let _ = sqlx::query("DELETE FROM writing WHERE id = ?")
     .bind(document_id)
     .execute(&mut *db)
     .await?;
 
-    let dir: String = format!("{WRITING_DIR}/{document_id}");
+    let dir = format!("{0}/{1}",app_config.writing_dir, document_id);
 
     let _ = fs::remove_dir_all(dir).map_err(|e| NotFound(e.to_string()));
     Ok(())
@@ -346,7 +349,7 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
 }
 
 
-async fn save_article_item( document_id: &String, file: &mut TempFile<'_>) -> io::Result<()> {
+async fn save_article_item( document_id: &String, file: &mut TempFile<'_>, base_dir: &String) -> io::Result<()> {
     let name = file.name().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "File has no name"))?;
     let content_type = file
         .content_type()
@@ -354,13 +357,14 @@ async fn save_article_item( document_id: &String, file: &mut TempFile<'_>) -> io
         .to_owned();
     let ext = content_type.extension().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "File has no extension"))?;  
     let full_name = [name, &ext.to_string()].join(".");
-    let dir = format!("{WRITING_DIR}/{document_id}");
+    let dir = format!("{base_dir}/{document_id}");
 
-    file.persist_to( format!("{dir}/{full_name}")).await?;
+    file.copy_to( format!("{dir}/{full_name}")).await?;
+    println!("saving to {dir}/{full_name}");
     Ok(()) 
 }
 
-fn generate_article_html( guid: &String, file: &mut TempFile<'_>) -> Result<(), Box<dyn std::error::Error>> {
+fn generate_article_html( guid: &String, file: &mut TempFile<'_>, base_dir: &String) -> Result<(), Box<dyn std::error::Error>> {
     
     // Read the markdown to a string
     let markdown_path = file.path().ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Markdown file not found"))?;
@@ -395,7 +399,7 @@ fn generate_article_html( guid: &String, file: &mut TempFile<'_>) -> Result<(), 
     let i1 =  "<html><head></head><body>".len();
     let i2 =  modified_html.len() - "</body></html>".len();
 
-    let html_path = format!("{WRITING_DIR}/{guid}/generated.html");
+    let html_path = format!("{base_dir}/{guid}/generated.html");
     _ = File::create(&html_path)?;
     fs::write(html_path, modified_html[i1..i2].to_string())?;
 

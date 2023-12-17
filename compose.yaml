@@ -27,8 +27,11 @@ services:
     secrets:
       - cert
       - key
-
-
+    volumes:
+      - type: bind
+        source: ./writing
+        target: /writing
+          
 secrets:
   db_password:
     file: secrets/db_password.txt

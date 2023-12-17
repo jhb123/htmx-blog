@@ -1,7 +1,7 @@
 use std::path::{PathBuf, Path};
 
 use rocket::fairing::AdHoc;
-use rocket::{routes, launch, get, catch, catchers};
+use rocket::{routes, launch, get};
 use rocket::fs::NamedFile;
 use rocket_dyn_templates::{Template, context};
 
