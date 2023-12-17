@@ -131,12 +131,12 @@ async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabas
 async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>) -> (Status, Template){ 
  
 
-    let res_article_id = match upload.document_id {
+    let res_document_id = match upload.document_id {
         Some(x) =>  update_article(&upload, &mut *db).await.map(|_| x),
         None => create_article(&upload, &mut *db).await
     };
     
-    let article_id = match res_article_id.map_err(|db_error| {
+    let document_id = match res_document_id.map_err(|db_error| {
         match db_error {
             DatabaseErrors::IdNotFound(_) => (Status::BadRequest, db_error.to_template()),
             DatabaseErrors::BadQuery(_) => (Status::BadRequest, db_error.to_template()),
@@ -149,7 +149,7 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
     };
 
 
-    let dir = format!("{WRITING_DIR}/{article_id}");
+    let dir = format!("{WRITING_DIR}/{document_id}");
 
     if let Err(error) = fs::create_dir_all(&dir){
         return (Status::InternalServerError, error.to_template())
@@ -160,11 +160,11 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
     for file in upload.files.iter_mut(){
         if let Some(content_type) = file.content_type() {
             if content_type.is_markdown() {
-                if let Err(error) = generate_article_html(&article_id, file){
+                if let Err(error) = generate_article_html(&document_id, file){
                     return (Status::InternalServerError, error.to_template())
                 }
             }
-            if let Err(error) = save_article_item(&article_id, file).await {
+            if let Err(error) = save_article_item(&document_id, file).await {
                 return (Status::InternalServerError, error.to_template())
             };
         } else {
@@ -194,11 +194,11 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
 }
 
 
-#[get("/<article_id>")]
-async fn get_article(article_id: &str, mut db: Connection<SiteDatabase>) -> (Status, Template) { 
+#[get("/<document_id>")]
+async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>) -> (Status, Template) { 
 
     let res = sqlx::query("UPDATE writing SET visits = visits+1 WHERE id = ?")
-    .bind(article_id)
+    .bind(document_id)
     .execute(&mut *db)
     .await;
 
@@ -206,9 +206,9 @@ async fn get_article(article_id: &str, mut db: Connection<SiteDatabase>) -> (Sta
         return (Status::InternalServerError, res.unwrap_err().to_template())
     }
 
-    let path = format!("{WRITING_DIR}/{article_id}/generated.html");
+    let path = format!("{WRITING_DIR}/{document_id}/generated.html");
     let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?")
-        .bind(article_id)
+        .bind(document_id)
         .fetch_one(&mut *db)
         .await;
 
@@ -227,27 +227,27 @@ async fn get_article(article_id: &str, mut db: Connection<SiteDatabase>) -> (Sta
     }
 }
 
-#[get("/<article_id>/image/<name>", rank=2)]
-async fn get_image(article_id: &str, name: &str) -> Result<NamedFile, NotFound<String>> { 
-    let path = format!("{WRITING_DIR}/{article_id}/{name}");
+#[get("/<document_id>/image/<name>", rank=2)]
+async fn get_image(document_id: &str, name: &str) -> Result<NamedFile, NotFound<String>> { 
+    let path = format!("{WRITING_DIR}/{document_id}/{name}");
     NamedFile::open(&path).await.map_err(|e| NotFound(e.to_string()))
 }
 
-#[post("/<article_id>/publish/<publish>")]
-async fn publish(_user: User, mut db: Connection<SiteDatabase>, article_id: i64, publish: bool) -> Template { 
+#[post("/<document_id>/publish/<publish>")]
+async fn publish(_user: User, mut db: Connection<SiteDatabase>, document_id: i64, publish: bool) -> Template { 
     println!("is published {}", publish);
     let time  = if publish { Some(chrono::Utc::now())} else {None};
 
     let res = sqlx::query("UPDATE writing SET is_published = ?, published_date = ? WHERE id = ?")
         .bind(publish)
         .bind(time)
-        .bind(article_id)
+        .bind(document_id)
         .execute(&mut *db)
         .await;
 
     match res {
         Ok(_) => {
-            let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?").bind(article_id).fetch_one(&mut *db).await.unwrap();
+            let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?").bind(document_id).fetch_one(&mut *db).await.unwrap();
 
             Template::render("document_list_item", context! {admin: true, data: data })
         },
@@ -255,17 +255,17 @@ async fn publish(_user: User, mut db: Connection<SiteDatabase>, article_id: i64,
     }
         
 
-    // Ok(format!("set article {0} to published={1}",article_id, is_published))
+    // Ok(format!("set article {0} to published={1}",document_id, is_published))
 }
 
-#[delete("/<article_id>/delete")]
-async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, article_id: i64)-> Result<()> {
+#[delete("/<document_id>/delete")]
+async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, document_id: i64)-> Result<()> {
     let _ = sqlx::query("DELETE FROM writing WHERE id = ?")
-    .bind(article_id)
+    .bind(document_id)
     .execute(&mut *db)
     .await?;
 
-    let dir: String = format!("{WRITING_DIR}/{article_id}");
+    let dir: String = format!("{WRITING_DIR}/{document_id}");
 
     let _ = fs::remove_dir_all(dir).map_err(|e| NotFound(e.to_string()));
     Ok(())
@@ -296,7 +296,7 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
 
     if title.is_none() && blurb.is_none() {
 
-        //sqlx::query("SELECT EXISTS (SELECT * FROM articles WHERE article_id=?) AS result");
+        //sqlx::query("SELECT EXISTS (SELECT * FROM articles WHERE document_id=?) AS result");
 
         return match sqlx::query("SELECT EXISTS (SELECT * FROM writing WHERE id=?) AS result")
             .bind(&document_id)
@@ -346,7 +346,7 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
 }
 
 
-async fn save_article_item( article_id: &String, file: &mut TempFile<'_>) -> io::Result<()> {
+async fn save_article_item( document_id: &String, file: &mut TempFile<'_>) -> io::Result<()> {
     let name = file.name().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "File has no name"))?;
     let content_type = file
         .content_type()
@@ -354,7 +354,7 @@ async fn save_article_item( article_id: &String, file: &mut TempFile<'_>) -> io:
         .to_owned();
     let ext = content_type.extension().ok_or_else(|| io::Error::new(io::ErrorKind::Other, "File has no extension"))?;  
     let full_name = [name, &ext.to_string()].join(".");
-    let dir = format!("{WRITING_DIR}/{article_id}");
+    let dir = format!("{WRITING_DIR}/{document_id}");
 
     file.persist_to( format!("{dir}/{full_name}")).await?;
     Ok(()) 
