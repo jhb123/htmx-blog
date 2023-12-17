@@ -1,7 +1,7 @@
 use std::{ fs::{self, File}, io, fmt};
 use kuchiki::{traits::TendrilSink, NodeRef};
 use markdown::{to_html_with_options, Options, CompileOptions};
-use rocket::{fairing::AdHoc, routes, get, post, FromForm, fs::{TempFile, NamedFile}, form::Form, http::Status, response::status::NotFound};
+use rocket::{fairing::AdHoc, routes, get, post, FromForm, fs::{TempFile, NamedFile}, form::Form, http::Status, response::status::NotFound, delete};
 use rocket::response::content::RawHtml;
 
 use rocket_db_pools::Connection;
@@ -15,7 +15,7 @@ use crate::{auth::api::User, db::SiteDatabase};
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("blog-stage", |rocket| async {
-        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish])
+        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish,delete_stuff])
     })
 }
 
@@ -240,6 +240,19 @@ async fn publish(_user: User, mut db: Connection<SiteDatabase>, article_id: i64,
         
 
     // Ok(format!("set article {0} to published={1}",article_id, is_published))
+}
+
+#[delete("/<article_id>/delete")]
+async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, article_id: i64)-> Result<()> {
+    let _ = sqlx::query("DELETE FROM writing WHERE id = ?")
+    .bind(article_id)
+    .execute(&mut *db)
+    .await?;
+
+    let dir: String = format!("{WRITING_DIR}/{article_id}");
+
+    let _ = fs::remove_dir_all(dir).map_err(|e| NotFound(e.to_string()));
+    Ok(())
 }
 
 async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64, DatabaseErrors>{

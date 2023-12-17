@@ -10,11 +10,11 @@
         <p>is published: {{data.is_published | default(value='-') }}</p>
         <p>Number of visits: {{data.visits | default(value='-') }}</p>
         {% if data.is_published %}
-            <button hx-get="writing/{{data.id}}?publish=false" hx-target="closest .writing-summary" hx-swap="outerHTML">Unpublish</button>
+            <button hx-get="/writing/{{data.id}}?publish=false" hx-target="closest .writing-summary" hx-swap="outerHTML">Unpublish</button>
         {% else %}
-            <button hx-get="writing/{{data.id}}?publish=true" hx-target="closest .writing-summary" hx-swap="outerHTML">Publish</button>
+            <button hx-get="/writing/{{data.id}}?publish=true" hx-target="closest .writing-summary" hx-swap="outerHTML">Publish</button>
 
         {% endif %}
-        <button>delete</button>
+        <button hx-delete="/writing/{{data.id}}/delete" hx-target="closest .writing-summary" hx-swap="outerHTML">delete</button>
     {% endif %}
 </div>
