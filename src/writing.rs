@@ -195,21 +195,34 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
 
 
 #[get("/<article_id>")]
-async fn get_article(article_id: &str, mut db: Connection<SiteDatabase>) -> Template { 
+async fn get_article(article_id: &str, mut db: Connection<SiteDatabase>) -> (Status, Template) { 
+
+    let res = sqlx::query("UPDATE writing SET visits = visits+1 WHERE id = ?")
+    .bind(article_id)
+    .execute(&mut *db)
+    .await;
+
+    if res.is_err() {
+        return (Status::InternalServerError, res.unwrap_err().to_template())
+    }
 
     let path = format!("{WRITING_DIR}/{article_id}/generated.html");
-    let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?").bind(article_id).fetch_one(&mut *db).await;
+    let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?")
+        .bind(article_id)
+        .fetch_one(&mut *db)
+        .await;
+
 
     let document_title = match res {
         Ok(data) => data.title.unwrap_or("Document".to_string()),
-        Err(err) => return err.to_template(),
+        Err(err) => return (Status::NotFound, err.to_template()),
     };
 
     match fs::read_to_string(path) {
         Ok(html) => {
-            Template::render("document", context! {raw_data: html, document_title: document_title })
+            (Status::Ok, Template::render("document", context! {raw_data: html, document_title: document_title }))
         },
-        Err(err) => err.to_template()
+        Err(err) => (Status::InternalServerError, err.to_template())
 
     }
 }
