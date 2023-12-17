@@ -9,7 +9,7 @@
 </head>
 <body hx-boost id="main-body">
     {% include "page_header" %}
-    <main>
+    <main class="px-8 bg-teal-600">
         {% block content %}{% endblock %}
     </main>
     <footer>
