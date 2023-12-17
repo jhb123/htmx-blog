@@ -22,6 +22,7 @@ Notes on each file:
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@0.0.0.0:3306/blog"}}
     export ROCKET_TLS={certs="secrets/cert.pem",key="secrets/key.pem"}
     export ROCKET_ADMIN_HASH="..."
+    export ROCKET_WRITING_DIR="./writing"
     ```
     The hashed password should be generated with the sha256 function, and this can be done on various websites.
 - `.env_deploy` has the environment variables needed to run the server in the dockerised application. Its very similar to the one above, but the host name of the MySQL is different and the location of the TLS certificate and key are in a different place.
@@ -30,6 +31,7 @@ Notes on each file:
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@db:3306/blog"}}
     export ROCKET_TLS={certs="/run/secrets/cert",key="/run/secrets/key"}
     export ROCKET_ADMIN_HASH="..."
+    export ROCKET_WRITING_DIR="/writing"
     ```
 - `db_root_password.txt` contains a password needed for MySQL.
 - `db_password.txt` contains a password needed for MySQL.
@@ -42,6 +44,10 @@ $ docker compose build
 $ docker compose up -d
 ``` 
 There may be an issue where the MySQL server hasn't fully started and the server will fail to start. If this happens, run the `up` command again.
+
+### Where are the uploaded documents stored
+
+The location of where documents are stored is configured with the environment variable `ROCKET_WRITING_DIR`. While developing locally, it is convenient to store this data in a directory called "writing" in the top level directory of this project. This directory is mounted with a bind mount with the docker compose file, so the website will work if you run it with cargo or if you run it docker.
 
 ### Deploying on the server development machine
 This requires you to have cargo set up. First, you should start the MySQL server with docker compose
@@ -57,4 +63,6 @@ Finally, build the server with e.g.
 cargo run --bin server
 ```
 ## Development
+Add a migration with `sqlx migrate add --source db/migrations <name of migrations>`
+
 Never delete or modify the files in `db/migrations`. If you need a new migration, you must add them correctly otherwise you will mess up the MySQL database.

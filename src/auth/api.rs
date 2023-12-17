@@ -3,13 +3,13 @@ use rocket::{
     fairing::AdHoc,
     form::Form,
     get,
-    http::{Cookie, CookieJar, Status, uri::{Origin, Uri}},
+    http::{Cookie, CookieJar, Status},
     post,
-    request::{FromRequest, Outcome, self},
+    request::{FromRequest, Outcome},
     response::Redirect,
     routes, catchers,
     time::OffsetDateTime,
-    FromForm, Request, catch, uri, Response,
+    FromForm, Request, catch,
 };
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};
@@ -108,6 +108,7 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
     }
 }
 
+#[allow(unused)]
 #[get("/secured")]
 fn secured(user: User) -> Template { 
         Template::render("test", context! { info: "secured" })

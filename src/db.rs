@@ -50,7 +50,7 @@ async fn users(mut db: Connection<SiteDatabase>) -> Result<Json<Vec<UserData>>>{
 
 async fn run_migrations(rocket: Rocket<Build>) -> fairing::Result {
     match SiteDatabase::fetch(&rocket) {
-        Some(db) => match migrate!("db/migrations").run(&**db).await {
+        Some(db) => match migrate!("./db/migrations").run(&**db).await {
             Ok(_) => Ok(rocket),
             Err(e) => {
                 error!("Failed to initialize SQLx database: {}", e);

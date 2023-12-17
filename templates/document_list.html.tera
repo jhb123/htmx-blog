@@ -1,0 +1,3 @@
+{% for data in blog_data%}
+    {% include "document_list_item" %}
+{% endfor %}

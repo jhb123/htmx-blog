@@ -5,8 +5,37 @@
 {% block header %}Writing{% endblock %}
 
 {% block content %}
-    <p>Blogs</p>
     {% if admin %}
-        <h3>Secret admin panel</h3>
+    <div class="form-container" id="admin-form-container">
+        <h1>Add or update documents</h1>
+        <form id="writing-add-update" hx-post="/writing/upload" hx-encoding='multipart/form-data' hx-swap="innerHTML" hx-target="#documents" hx-on::after-request="this.reset()">
+            <div class="form-group">
+                <label for="document_id">Document I.D.</label>
+                <input type="text" id="document_id" name="document_id" >
+            </div>
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title">
+            </div>
+            <div class="form-group">
+                <label for="blurb">Blurb</label>
+                <textarea rows="7" type="text" id="blurb" name="blurb" form="writing-add-update"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="tags">Tags</label>
+                <input type="text" id="tags" name="tags">
+            </div>
+            <div class="form-group">
+                <label for="files">Files</label>
+                <input id="files"  name="files" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
+            </div>
+            <input type="submit">
+        </form>
+    </div>
+    <script src="/js/postDocument.js"></script>
     {% endif %}
+    <h1>Writing</h1>
+    <div id="documents">
+        {% include "document_list" %}
+    </div>
 {% endblock %}

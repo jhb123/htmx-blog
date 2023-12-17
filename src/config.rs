@@ -4,5 +4,6 @@ use serde::Deserialize;
 #[serde(crate = "rocket::serde")]
 #[allow(dead_code)]
 pub struct AppConfig {
-    pub admin_hash: String
+    pub admin_hash: String,
+    pub writing_dir: String
 }

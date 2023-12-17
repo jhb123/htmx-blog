@@ -1,7 +1,7 @@
 use std::path::{PathBuf, Path};
 
 use rocket::fairing::AdHoc;
-use rocket::{routes, launch, get, catch, catchers};
+use rocket::{routes, launch, get};
 use rocket::fs::NamedFile;
 use rocket_dyn_templates::{Template, context};
 
@@ -14,31 +14,22 @@ use htmx_blog::config::AppConfig;
 async fn rocket() ->  _ {
 
     rocket::build()
-        .mount("/", routes![index_admin, static_resources, js_resources])
+        .mount("/", routes![index_admin, static_resources, js_resources, css_resources])
         .attach(db::stage())
         .attach(api::stage())
         .attach(writing::stage())
         .attach(cv::stage())
         .attach(AdHoc::config::<AppConfig>())
         .attach(Template::fairing())
-        .register("/", catchers![index])
-
-
-}
-
-// #[get("/", rank = 1)]
-// fn index() -> Template {
-//     Template::render("index", context! { title: "Hello, World", admin: false })
-// }
-
-#[catch(401)]
-fn index() -> Template { 
-        Template::render("index", context! { admin: false })
 }
 
 #[get("/", rank=1)]
-fn index_admin(_user: User) -> Template { 
-        Template::render("index", context! { admin: true })
+fn index_admin(user: Option<User>) -> Template { 
+
+        match user {
+            Some(_) =>  Template::render("index", context! { admin: true }),
+            None =>  Template::render("index", context! { admin: false })
+        }
 }
 
 #[get("/js/<path..>", rank = 2)]
@@ -48,7 +39,13 @@ async fn js_resources(path: PathBuf) -> Option<NamedFile> {
     NamedFile::open(full_path).await.ok()
 }
 
-#[get("/<path..>", rank = 3)]
+#[get("/styles.css", rank = 3)]
+async fn css_resources() -> Option<NamedFile> {
+    let full_path = Path::new("./static/styles.css");
+    NamedFile::open(full_path).await.ok()
+}
+
+#[get("/<path..>", rank = 4)]
 async fn static_resources(path: PathBuf) -> Option<NamedFile> {
     let base_path = Path::new("./static/");
     let full_path = base_path.join(path);

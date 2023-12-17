@@ -65,6 +65,8 @@ USER appuser
 COPY --from=build /bin/server /app/bin/
 COPY /templates /templates
 COPY /static /static
+COPY /db/migrations /db/migrations
+COPY /js /js
 
 # Configure rocket to listen on all interfaces.
 ENV ROCKET_ADDRESS=0.0.0.0
