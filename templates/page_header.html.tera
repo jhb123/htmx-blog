@@ -1,9 +1,12 @@
-<header>
-    <h1>Joe's website</h1>
-    <a href="/">home</a>
-    <a href="/writing">writing</a>
-    {% include "adminToggle" %}
-    {% if admin %}
-    <p>Logged in as admin</p>
-    {% endif %}
+<header class="p-3 bg-gradient-to-r from-green-300 via-yellow-300 to-pink-300 h-26">
+    <div class="flex justify-between pb-3">
+        <h2 class="font-mono font-bold">placeholder name</h2>
+        {% include "adminToggle" %}
+        </div>
+        <div class="flex gap-4 place-content-center place-items-center content-center h-10">
+            <a hx-boost="true" href="/" class="flex place-content-center box-border rounded-xl hover:rounded-lg border-2 hover:shadow-lg hover:border-4 border-black w-32 h-fit bg-green-200 hover:bg-blue-200 ease-in duration-100 p-2 font-mono font-normal hover:font-bold">home</a>
+            <a hx-boost="true" href="/writing" class="flex place-content-center box-border rounded-xl hover:rounded-lg border-2 hover:shadow-lg hover:border-4 border-black w-32 h-fit bg-green-200 hover:bg-blue-200 ease-in duration-100 p-2 font-mono font-normal hover:font-bold" >writing</a>
+        </div>
+    
+    
 </header>

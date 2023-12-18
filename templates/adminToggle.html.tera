@@ -6,7 +6,7 @@ log out
 log in
 {% endif %}
 </button>
-<dialog id="adminDialog">
+<dialog id="adminDialog" class="backdrop:backdrop-blur backdrop-opacity-10">
     <div hx-get="/auth/panel" hx-trigger="load" hx-swap="outerHTML" ></div> 
     <button id="closeAdminDialog">close</button>
     <button hx-get="/auth/secured/" hx-swap="innerHTML">test</div>

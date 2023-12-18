@@ -25,7 +25,7 @@ fn cv() -> Template {
 
 
 #[derive(Serialize, Deserialize, Debug)]
-struct CV {
+pub struct CV {
     intro: String,
     skills: Skills,
     #[serde(rename = "programming projects")]

@@ -7,11 +7,13 @@
     <link rel="stylesheet" href="/styles.css">
     <script src="https://unpkg.com/htmx.org@1.9.9"></script>
 </head>
-<body hx-boost id="main-body">
+<body hx-boost id="main-body" class="bg-teal-50 ">
     {% include "page_header" %}
-    <main class="px-8 bg-teal-600">
+    <div class="flex flex-col items-stretch w-screen p-3">
+    <main class="flex flex-col max-w-3xl self-center">
         {% block content %}{% endblock %}
     </main>
+</div>
     <footer>
         <!-- Footer content goes here -->
     </footer>

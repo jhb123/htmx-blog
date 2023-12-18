@@ -4,5 +4,7 @@
 
 {% block content %}
 <h1>{{document_title}}</h1>
+<div>
 {{ raw_data | safe}}
+</div>
 {% endblock %}

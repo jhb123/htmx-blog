@@ -1,79 +1,110 @@
+<div class="flex flex-col gap-2 px-2">
 <h1>CV</h1>
 <h2>Intro</h2>
-<p>
+<p class="text-justify pl-8">
 {{cv_data.intro}}
 </p>
 <h2>Skills</h2>
-<p>
-{% for key, value in cv_data.skills["programming languages"] %}
-    <h4>{{key}}</h4>
-    <ul>
-        {% for skill in value %}
-        <li>
-            <p>{{skill}}</p>
-        </li>
+
+<div class="text-justify pl-8">
+    <h4>Programming languages</h4>
+    <div class="flex gap-8 pl-8">
+        <ul class="flex gap-8 pl-8">
+        {% for key, value in cv_data.skills["programming languages"] %}
+            {% for skill in value %}
+            <li class="font-mono">
+                <p>{{skill}}</p>
+            </li>
+            {% endfor %}
         {% endfor %}
-    </ul>
-{% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="grid grid-cols-4 text-justify pl-8 gap-2">
 {% for key, value in cv_data.skills %}
 {% if key != "programming languages" %}
-    <h4>{{key}}</h4>
-    <ul>
         {% for skill in value %}
-        <li>
+        <div class="text-center border-2 border-indigo-400 rounded-lg bg-indigo-200">
             <p>{{skill}}</p>
-        </li>
+        </div>
         {% endfor %}
-    </ul>
 {% endif %}
 {% endfor %}
+</div>
+
 <h2>Jobs</h2>
 {% for key, value in cv_data["jobs"] %}
-    <h3>{{value.company}}</h3>
-    <ul>
-        {% for role in value.roles %}
-        <li>
-            <h4>{{role.title}}</h4>
-            <p>{{role.dates}}</p>
-            <p>{{role.blurb}}</p>
-            <ul>
-            {% for highlight in role.highlights%}
-                <li>{{highlight}}</li>
+    <div class="flex ml-8 p-3 border-2 border-pink-200 rounded-lg bg-orange-50">
+        <h4 class="px-4 w-1/3">{{value.company}}</h4>
+        <div class="flex flex-col w-2/3">
+            <div class="self-end" >
+            {% for role in value.roles %}
+                <div>
+                    <h5 class="font-bold">{{role.title}}</h5>
+                    <p>{{role.dates}}</p>
+                </div>
+                <div>
+                    <p>{{role.blurb}}</p>
+                <ul class="list-disc text-justify">
+                {% for highlight in role.highlights%}
+                    <li class="text-sm leading-6">{{highlight}}</li>
+                {% endfor %}
+                </div>
+                </ul>
             {% endfor %}
-            </ul>
-        </li>
-        {% endfor %}
-    </ul>
+        </div>
+        </div>
+    </div>
 {% endfor %}
 <h2>Programming Projects</h2>
+
 {% for key, value in cv_data["programming projects"] %}
-    <h3>{{value.name}}</h3>
-    <p>{{value.blurb}}</p>
-    <ul>
-        {% for link in value.links %}
-        <li>
-            <a href={{link}}>{{link}}</a>
-        </li>
-        {% endfor %}
-    </ul>
+<div class="flex flex-col ml-8 p-3 border-2 border-sky-200 rounded-lg  bg-slate-50">
+    <h5 class="px-4">{{value.name}}</h5>
+    <div class="flex flex-col text-justify ">
+        <div class="self-end w-2/3">
+            <p class="text-sm leading-6">{{value.blurb}}</p>
+            <ul class="list-disc text-justify">
+                {% for link in value.links %}
+                <li>
+                    <a class="underline text-sm" href={{link}}>{{link}}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+</div>
+</div>
+
 {% endfor %}
 <h2>Education</h2>
 {% for key, value in cv_data["education"] %}
-    <h3>{{value.degree}}</h3>
+<div class="flex flex ml-8 p-3 border-2 border-red-200 rounded-lg  bg-lime-50">
+    <h5 class="px-4 w-1/3">{{value.degree}}</h5>
+    <div class="flex flex-col text-justify w-2/3 ">
     <p>{{value.university}}</p>
     <p>{{value.dates}}</p>
     <p>{{value.grade}}</p>
-    <ul>
+    <ul class="list-disc text-justify">
         {% for highlight in value.highlights %}
         <li>
-            <p>{{highlight}}</p>
+            <p class="text-sm leading-6">{{highlight}}</p>
         </li>
         {% endfor %}
     </ul>
+</div>
+</div>
 {% endfor %}
 <h2>Training</h2>
 {% for key, value in cv_data["training"] %}
-    <h3>{{value.title}}</h3>
-    <p>{{value.provider}}</p>
-    <p>{{value.blurb}}</p>
+<div class="flex flex ml-8 p-3 border-2 border-pink-200 rounded-lg bg-fuchsia-50">
+
+    <h5 class="px-4 w-1/3">{{value.title}}</h3>
+        <div class="flex flex-col text-justify w-2/3 ">
+
+    <p class="text-sm leading-6">{{value.provider}}</p>
+    <p class="text-sm leading-6">{{value.blurb}}</p>
+    </div>
+    </div>
 {% endfor %}
+</div>
