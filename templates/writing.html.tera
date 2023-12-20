@@ -6,7 +6,7 @@
 
 {% block content %}
     {% if admin %}
-    <div class="form-container" id="admin-form-container">
+    <div class="admin-form-container" id="admin-form-container">
         <h1>Add or update documents</h1>
         <form id="writing-add-update" hx-post="/writing/upload" hx-encoding='multipart/form-data' hx-swap="innerHTML" hx-target="#documents" hx-on::after-request="this.reset()">
             <div class="form-group">
@@ -29,13 +29,17 @@
                 <label for="files">Files</label>
                 <input id="files"  name="files" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
             </div>
-            <input type="submit">
+            <button>
+                <input type="submit">
+            </button>
         </form>
     </div>
     <script src="/js/postDocument.js"></script>
     {% endif %}
     <div class="flex flex-col gap-2 px-2 mb-32">
     <h1>Writing</h1>
+    <div id="documents">
     {% include "document_list" %}
+    </div>
     </div>
 {% endblock %}

@@ -1,9 +1,7 @@
-
-
 <div class="flex flex-col gap-2 px-2 mb-32">
 <h1>CV</h1>
 <h2>Intro</h2>
-<p class="text-justify pl-8">
+<p class="text-justify sm:pl-8">
 {{cv_data.intro}}
 </p>
 <h2>Programming languages</h2>
