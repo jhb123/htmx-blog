@@ -34,8 +34,8 @@
     </div>
     <script src="/js/postDocument.js"></script>
     {% endif %}
+    <div class="flex flex-col gap-2 px-2 mb-32">
     <h1>Writing</h1>
-    <div id="documents">
-        {% include "document_list" %}
+    {% include "document_list" %}
     </div>
 {% endblock %}
