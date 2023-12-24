@@ -32,8 +32,7 @@ pub fn stage() -> AdHoc {
     AdHoc::on_ignite("Authentication-stage", |rocket| async {
         //rocket.attach(ArticlesDb::init())
         //    .attach(AdHoc::try_on_ignite("SQLx Migrations", run_migrations))
-        rocket.mount("/auth", routes![login, logout, secured, logout_panel, login_panel])
-        .register("/auth/panel", catchers![logout_catcher])
+        rocket.mount("/auth", routes![login, logout, secured])
     })
 }
 
@@ -41,30 +40,6 @@ pub fn stage() -> AdHoc {
 struct Admin<'r> {
     pub r#password: &'r str,
 }
-
-// #[get("/toggle", rank=1)]
-// fn admin_login_toggle() -> 
-
-// #[get("/toggle", rank=2)]
-// fn admin_login_toggle_logged_in(user: User) -> Template { 
-//     Template::render("adminToggle", context! { title: "Hello, World", admin: true })
-// }
-
-#[get("/panel", rank=1)]
-fn logout_panel(_user: User) -> Template { 
-        Template::render("loginPanel", context! { admin: true })
-}
-
-#[catch(401)]
-fn logout_catcher() -> Redirect { 
-    Redirect::to("/auth/panel/login")
-}
-
-#[get("/panel/login", rank=1)]
-fn login_panel() -> Template { 
-    Template::render("loginPanel", context! { admin: false })
-}
-
 
 #[post("/login", data = "<admin>")]
 async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>, url: HtmxCurrentUrl) -> Redirect {

@@ -25,3 +25,40 @@
       @apply leading-9;
     }
   }
+
+  
+
+  .primary-button {
+    @apply custom-button bg-green-200
+  }
+
+  .secondary-button {
+    @apply custom-button bg-slate-200
+  }
+
+  .primary-icon-button {
+    @apply custom-icon-button bg-green-200
+  }
+
+  .secondary-icon-button {
+    @apply custom-icon-button bg-slate-200
+  }
+
+  .custom-input {
+    @apply border border-slate-200 rounded-md p-2 hover:bg-slate-50
+  }
+
+  @layer components {
+    .custom-button {
+      @apply box-border rounded-xl outline outline-2 w-32 p-2 font-mono flex items-center justify-center
+      hover:bg-blue-200 hover:rounded-lg hover:font-bold hover:outline-4 hover:shadow-lg
+      ease-in duration-100 
+    }
+
+    .custom-icon-button {
+      @apply box-border rounded-xl outline outline-2 p-2 font-mono flex items-center justify-center
+      hover:bg-blue-200 hover:rounded-lg hover:font-bold hover:outline-4 hover:shadow-lg
+      ease-in duration-100 
+    }
+    /* ... */
+  }

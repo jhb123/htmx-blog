@@ -1,0 +1,2 @@
+<label class="bg-green-200" for="{{input_id}}">{{label_text}}</label>
+<input type="text" id="{{input_id}}" name="{{input_id}}" >

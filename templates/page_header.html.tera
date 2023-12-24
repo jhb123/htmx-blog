@@ -3,10 +3,17 @@
         <h2 class="text-2xl sm:text-4xl font-mono font-bold">placeholder name</h2>
         {% include "adminToggle" %}
     </div>
-        <div class="flex gap-4 place-content-center place-items-center content-center h-10">
-            <a hx-boost="true" href="/" class="flex place-content-center box-border rounded-xl hover:rounded-lg border-2 hover:shadow-lg hover:border-4 border-black w-32 h-fit bg-green-200 hover:bg-blue-200 ease-in duration-100 p-2 font-mono font-normal hover:font-bold">home</a>
-            <a hx-boost="true" href="/writing" class="flex place-content-center box-border rounded-xl hover:rounded-lg border-2 hover:shadow-lg hover:border-4 border-black w-32 h-fit bg-green-200 hover:bg-blue-200 ease-in duration-100 p-2 font-mono font-normal hover:font-bold" >writing</a>
-        </div>
+        <nav class="flex gap-4 place-content-center place-items-center content-center h-10">
+            <a hx-boost="true" href="/" class="primary-button">home</a>
+            <a hx-boost="true" href="/writing" class="primary-button">writing</a>
+            <script>
+                $(function () {
+                    $('nav a').filter(function () {
+                        return this.href === location.href;
+                    }).addClass('saturate-200');
+                });
+            </script>
+        </nav>
     
     
 </header>
