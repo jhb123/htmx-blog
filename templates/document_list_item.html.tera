@@ -1,12 +1,12 @@
-<div class="writing-summary flex flex-col rounded-lg divide-y-4">
+<div class="writing-summary flex flex-col rounded-lg divide-y-4 outline">
     {% if admin %}
     <a class="bg-white hover:bg-sky-100 ease-in duration-100 box-border p-3 rounded-t-lg" href="writing/{{data.id}}"> 
     {% else %}
     <a class="bg-white hover:bg-sky-100 ease-in duration-100 box-border p-3 rounded-lg" href="writing/{{data.id}}"> 
     {% endif %}
             <h5>{{data.title | default(value='-') }}</h5>
-            <p>published date: {{data.published_date | default(value='-') }}</p>
-            <p>{{data.blurb | default(value='-') }}</p>
+            <p class="text-sm text-slate-500">{{data.published_date | default(value='-') }}</p>
+            <p class="text-sm mt-4 text-justify leading-loose">{{data.blurb | default(value='-') }}</p>
     </a>
     {% if admin %}
     <div class="bg-slate-100 box-border p-3 rounded-b-lg flex flex-col gap-2">

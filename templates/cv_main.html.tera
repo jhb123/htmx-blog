@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-2 px-2 mb-32">
-<h1>CV</h1>
+<h1 class="my-4">CV</h1>
 <h2>Intro</h2>
 <p class="text-justify sm:pl-8">
 {{cv_data.intro}}
