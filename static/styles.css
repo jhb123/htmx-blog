@@ -709,6 +709,10 @@ p {
   row-gap: 0.25rem;
 }
 
+.gap-y-2 {
+  row-gap: 0.5rem;
+}
+
 .divide-y-4 > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-y-reverse: 0;
   border-top-width: calc(4px * calc(1 - var(--tw-divide-y-reverse)));
@@ -818,6 +822,16 @@ p {
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.bg-red-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 202 202 / var(--tw-bg-opacity));
+}
+
+.bg-slate-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(241 245 249 / var(--tw-bg-opacity));
 }
 
 .bg-gradient-to-r {

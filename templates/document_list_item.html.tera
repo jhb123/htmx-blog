@@ -9,7 +9,7 @@
             <p>{{data.blurb | default(value='-') }}</p>
     </a>
     {% if admin %}
-    <div class="bg-white box-border p-3 rounded-b-lg">
+    <div class="bg-slate-100 box-border p-3 rounded-b-lg flex flex-col gap-2">
         <div class="flex flex-wrap gap-x-4 gap-y-1">
             <p>ID: {{data.id | default(value='-') }}</p>
             <p>created on: {{data.creation_date | default(value='-') }}</p>
@@ -18,12 +18,12 @@
         </div>
         <div class="flex flex-wrap gap-x-4 justify-center">
             {% if data.is_published %}
-                <button hx-post="/writing/{{data.id}}/publish/false" hx-target="closest .writing-summary" hx-swap="outerHTML">Unpublish</button>
+                <button class="secondary-button" hx-post="/writing/{{data.id}}/publish/false" hx-target="closest .writing-summary" hx-swap="outerHTML">Unpublish</button>
             {% else %}
-                <button hx-post="/writing/{{data.id}}/publish/true" hx-target="closest .writing-summary" hx-swap="outerHTML">Publish</button>
+                <button class="primary-button" hx-post="/writing/{{data.id}}/publish/true" hx-target="closest .writing-summary" hx-swap="outerHTML">Publish</button>
 
             {% endif %}
-            <button hx-delete="/writing/{{data.id}}/delete" hx-target="closest .writing-summary" hx-swap="outerHTML">delete</button>
+            <button class="secondary-button" hx-delete="/writing/{{data.id}}/delete" hx-target="closest .writing-summary" hx-swap="outerHTML">delete</button>
         </div>
     </div>
     {% endif %}
