@@ -27,7 +27,7 @@
             </div>
                 {# <label class="bg-green-200" for="files">Files</label> #}
             <input id="files" class="file:place-content-center file:box-border file:rounded-xl file:border-2 file:hover:shadow-lg file:border-black file:h-fit file:bg-green-200 file:hover:bg-blue-200 ease-in duration-100 file:p-2 file:h-12 font-mono file:hover:font-bold file:mr-4" name="files" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
-            <button class="custom-button place-self-center">
+            <button class="primary-button place-self-center">
                 <input type="submit">
             </button>
         </form>

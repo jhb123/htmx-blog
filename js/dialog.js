@@ -4,7 +4,7 @@ var closeButton = document.getElementById("closeAdminDialog");
 
 // "Show the dialog" button opens the dialog modally
 showButton.addEventListener("click", () => {
-dialog.showModal();
+    dialog.showModal();
 });
 
 // "Close" button closes the dialog

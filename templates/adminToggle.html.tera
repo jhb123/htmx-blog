@@ -10,22 +10,29 @@
     </span>
 {% endif %}
 </button>
-<dialog id="adminDialog" class="backdrop:backdrop-blur backdrop-opacity-10">
-    <div class="admin-form-container p-4 border-2 border-black rounded-lg">
-        {# <div hx-get="/auth/panel" hx-trigger="load" hx-swap="outerHTML" ></div>  #}
-        {% if admin %}
-        <form id="logout" method=post action='/auth/logout' hx-swap="innerHTML" hx-target="body" onsubmit="document.getElementById('url').value = window.location.href;">
-            <input type="submit" value="log out">
-            <input type="hidden" name="url" id="url"> 
-        </form>
+<dialog id="adminDialog" class="backdrop:backdrop-blur backdrop-opacity-10 p-4 border-2 border-black rounded-lg">
+    {% if admin %}
+    <h4 class="text-center">Log in as admin</h4>
+    <form class="p-2" id="logout" method=post action='/auth/logout' hx-swap="innerHTML" hx-target="body" onsubmit="document.getElementById('url').value = window.location.href;">
+        <input type="hidden" name="url" id="url"> 
+        <div class="flex gap-4">
+            <button class="primary-button">log out</button>
+            <button class="secondary-button" id="closeAdminDialog" type="button">close</button>
+        </div>
+    </form>
     {% else %}
+    <h4 class="text-center">Log in as admin</h4>
         <form id="adminLogin"  hx-post='/auth/login' hx-swap="innerHTML" hx-target="body">
-        <label for="password">Password</label>
-        <input type="text" id="password" name="password">
-        <input type="submit">
+        <div class="flex flex-col my-2">
+            <label class="font-mono" for="password">Password</label>
+            <input class="custom-input" id="password" name="password" type="password">
+        </div>
+        <div class="flex gap-4">
+            <button class="primary-button">log in</button>
+            <button class="secondary-button" id="closeAdminDialog" type="button">close</button>
+        </div>
     </form>
     {% endif %}
-        <button id="closeAdminDialog">close</button>
-    </div>
+
 </dialog>
 {% endblock adminToggle %}

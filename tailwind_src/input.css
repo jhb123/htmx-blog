@@ -25,9 +25,7 @@
       @apply leading-9;
     }
   }
-
   
-
   .primary-button {
     @apply custom-button bg-green-200
   }
