@@ -2,7 +2,12 @@
 module.exports = {
   content: ['./templates/**/*.{html.tera,js}'],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'serif': [ 'Alice','ui-serif'],
+        'sans': ['Work Sans', 'ui-sans']
+      },
+    },
   },
   plugins: [],
 }

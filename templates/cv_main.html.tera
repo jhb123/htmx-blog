@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-2 px-2 mb-32">
-<h1 class="my-4">CV</h1>
+<h1 class="my-4 text-center">CV</h1>
 <h2>Intro</h2>
 <p class="text-justify sm:pl-8">
 {{cv_data.intro}}
@@ -20,14 +20,14 @@
 {% if key != "programming languages" %}
         {% for skill in value %}
         <div class="text-center border-2 border-indigo-400 rounded-lg bg-indigo-200">
-            <p>{{skill}}</p>
+            <p class="font-sans">{{skill}}</p>
         </div>
         {% endfor %}
 {% endif %}
 {% endfor %}
 </div>
 
-<h2>Jobs</h2>
+<h2>Experience</h2>
 {% for key, value in cv_data["jobs"] %}
     <div class="flex flex-col sm:flex-row sm:ml-8 p-3 border-2 border-pink-200 rounded-lg bg-orange-50">
         <h4 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.company}}</h4>

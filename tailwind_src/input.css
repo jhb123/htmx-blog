@@ -3,60 +3,92 @@
 @tailwind utilities;
 
 @layer base {
-    h1 {
-      @apply text-5xl;
-    }
-    h2 {
-      @apply text-4xl;
-    }
-    h3 {
-      @apply text-3xl;
-    }
-    h4 {
-      @apply text-2xl;
-    }
-    h5 {
-      @apply text-xl;
-    }
-    h6 {
-      @apply text-lg leading-9;
-    }
-    p {
-      @apply leading-9;
-    }
+  h1 {
+    @apply text-5xl my-2;
+  }
+  h2 {
+    @apply text-4xl my-2;
+  }
+  h3 {
+    @apply text-3xl my-2; 
+  }
+  h4 {
+    @apply text-2xl my-2;
+  }
+  h5 {
+    @apply text-xl my-2;
+  }
+  h6 {
+    @apply text-lg leading-9 my-2;
+  }
+  p {
+    @apply leading-9 my-2 font-serif;
+  }
+
+  blockquote {
+    @apply italic my-4 pl-4;
+  }
+
+  li {
+    @apply leading-9 font-serif;
+  }
+
+
+  .document img {
+    @apply inline-block
+  }
+
+  .document p {
+    @apply text-justify font-serif
+  }
+
+  .document ul {
+    @apply list-disc ml-8 font-serif
+  }
+
+  .document ol {
+    @apply list-decimal ml-8 font-serif
   }
   
+  pre code  {
+    @apply bg-slate-200 border-2 border-black block p-3 rounded-lg
+  }
+
+}
+
+
+
+@layer components {
+  .custom-button {
+    @apply box-border rounded-xl outline outline-2 w-32 p-2 font-mono flex items-center justify-center
+    hover:bg-blue-200 hover:rounded-lg hover:font-bold hover:outline-4 hover:shadow-lg
+    ease-in duration-100 
+  }
+
+  .custom-icon-button {
+    @apply box-border rounded-xl outline outline-2 p-2 font-mono flex items-center justify-center
+    hover:bg-blue-200 hover:rounded-lg hover:font-bold hover:outline-4 hover:shadow-lg
+    ease-in duration-100 
+  }
+
   .primary-button {
     @apply custom-button bg-green-200
   }
-
+  
   .secondary-button {
     @apply custom-button bg-slate-200
   }
-
+  
   .primary-icon-button {
     @apply custom-icon-button bg-green-200
   }
-
+  
   .secondary-icon-button {
     @apply custom-icon-button bg-slate-200
   }
-
+  
   .custom-input {
     @apply border border-slate-200 rounded-md p-2 hover:bg-slate-50
   }
-
-  @layer components {
-    .custom-button {
-      @apply box-border rounded-xl outline outline-2 w-32 p-2 font-mono flex items-center justify-center
-      hover:bg-blue-200 hover:rounded-lg hover:font-bold hover:outline-4 hover:shadow-lg
-      ease-in duration-100 
-    }
-
-    .custom-icon-button {
-      @apply box-border rounded-xl outline outline-2 p-2 font-mono flex items-center justify-center
-      hover:bg-blue-200 hover:rounded-lg hover:font-bold hover:outline-4 hover:shadow-lg
-      ease-in duration-100 
-    }
-    /* ... */
-  }
+  /* ... */
+}
