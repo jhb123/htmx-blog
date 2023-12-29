@@ -36,10 +36,10 @@
             {% for role in value.roles %}
                 <div>
                     <h3>{{role.title}}</h3>
-                    <p>{{role.dates}}</p>
+                    <p class="dark:text-slate-200">{{role.dates}}</p>
                 </div>
                 <div>
-                    <p class="text-justify text-sm sm:text-lg dark:text-slate-100">{{role.blurb}}</p>
+                    <p class="text-justify text-sm sm:text-lg dark:text-slate-200">{{role.blurb}}</p>
                 <ul class="list-disc text-justify pl-4">
                 {% for highlight in role.highlights%}
                     <li class="text-sm leading-6 dark:text-slate-200">{{highlight}}</li>
