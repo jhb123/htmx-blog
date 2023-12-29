@@ -1,14 +1,38 @@
 {% block adminToggle %}
-<button id="showDialog">
+<button class="secondary-icon-button" id="showDialog">
 {% if admin %}
-log out
+<span class="material-symbols-outlined">
+    logout
+    </span>
 {% else %}
-log in
+<span class="material-symbols-outlined">
+    admin_panel_settings
+    </span>
 {% endif %}
 </button>
-<dialog id="adminDialog">
-    <div hx-get="/auth/panel" hx-trigger="load" hx-swap="outerHTML" ></div> 
-    <button id="closeAdminDialog">close</button>
-    <button hx-get="/auth/secured/" hx-swap="innerHTML">test</div>
+<dialog id="adminDialog" class="backdrop:backdrop-blur backdrop-opacity-10 p-4 border-2 dark:bg-slate-700 dark:text-emerald-200 rounded-lg">
+    {% if admin %}
+    <h4 class="text-center">Log in as admin</h4>
+    <form class="p-2" id="logout" method=post action='/auth/logout' hx-swap="innerHTML" hx-target="body" onsubmit="document.getElementById('url').value = window.location.href;">
+        <input type="hidden" name="url" id="url"> 
+        <div class="flex gap-4">
+            <button class="primary-button">log out</button>
+            <button class="secondary-button" id="closeAdminDialog" type="button">close</button>
+        </div>
+    </form>
+    {% else %}
+    <h4 class="text-center">Log in as admin</h4>
+        <form id="adminLogin"  hx-post='/auth/login' hx-swap="innerHTML" hx-target="body">
+        <div class="flex flex-col my-2">
+            <label class="font-mono" for="password">Password</label>
+            <input class="custom-input" id="password" name="password" type="password">
+        </div>
+        <div class="flex gap-4">
+            <button class="primary-button">log in</button>
+            <button class="secondary-button" id="closeAdminDialog" type="button">close</button>
+        </div>
+    </form>
+    {% endif %}
+
 </dialog>
 {% endblock adminToggle %}

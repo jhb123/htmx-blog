@@ -1,0 +1,34 @@
+<div class="writing-summary flex flex-col rounded-lg divide-y-4 outline">
+    {% if admin %}
+    <a class="bg-emerald-50 dark:bg-slate-700 hover:bg-emerald-100 dark:hover:bg-slate-600 ease-in duration-100 box-border p-3 rounded-t-lg" href="writing/{{data.id}}"> 
+    {% else %}
+    <a class="box-border p-3 rounded-lg 
+    bg-emerald-50 hover:bg-emerald-100
+    dark:bg-slate-700 dark:hover:bg-emerald-700 
+    ease-in duration-100" href="writing/{{data.id}}"> 
+    {% endif %}
+            <h1 class="text-3xl">{{data.title | default(value='-') }}</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-200">{{data.published_date | default(value='-') }}</p>
+            <p class="text-sm mt-4 text-justify leading-loose text-slate-700 dark:text-slate-200">{{data.blurb | default(value='-') }}</p>
+    </a>
+    {% if admin %}
+    <div class="bg-slate-100 dark:bg-slate-800 box-border p-3 rounded-b-lg flex flex-col gap-2">
+        <div class="flex flex-wrap gap-x-4 gap-y-1">
+            <p>ID: {{data.id | default(value='-') }}</p>
+            <p>created on: {{data.creation_date | default(value='-') }}</p>
+            <p>is published: {{data.is_published | default(value='-') }}</p>
+            <p>Number of visits: {{data.visits | default(value='-') }}</p>
+        </div>
+        <div class="flex flex-wrap gap-x-4 justify-center">
+            {% if data.is_published %}
+                <button class="secondary-button" hx-post="/writing/{{data.id}}/publish/false" hx-target="closest .writing-summary" hx-swap="outerHTML">Unpublish</button>
+            {% else %}
+                <button class="primary-button" hx-post="/writing/{{data.id}}/publish/true" hx-target="closest .writing-summary" hx-swap="outerHTML">Publish</button>
+
+            {% endif %}
+            <button class="secondary-button" hx-delete="/writing/{{data.id}}/delete" hx-target="closest .writing-summary" hx-swap="outerHTML">delete</button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+

@@ -2,10 +2,10 @@
     "intro": "Driven problem solver looking to take the next step in a career in software development. Innovative and thrives on challenges. Adept at learning new products, systems and technologies. Proactive, diligent, self-sufficient, reliable and collegial.",
     "skills": {
         "programming languages": {
-            "3y": [
+            "3 years": [
                 "Python"
             ],
-            "1y": [
+            "1 year": [
                 "Rust",
                 "Javascript",
                 "Kotlin"
@@ -41,8 +41,8 @@
             "AWS DynamoDB"
         ],
         "soft skills": [
-            "Agile methodologies",
-            "Teamwork and collaboration",
+            "Agile",
+            "Teamwork",
             "Active listening",
             "Planning",
             "Time management"

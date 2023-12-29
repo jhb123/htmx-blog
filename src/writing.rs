@@ -111,14 +111,47 @@ struct DocumentMetaData {
 }
 
 
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct FormattedDocumentMetaData {
+    id: String,
+    creation_date: Option<String>,
+    published_date: Option<String>,
+    is_published: bool,
+    visits: Option<String>,
+    title: Option<String>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // tags: Option<String>,
+    blurb: Option<String>,
+}
+
+impl DocumentMetaData {
+
+    fn display(&self) -> FormattedDocumentMetaData {
+        FormattedDocumentMetaData {
+            id: self.id.to_string(),
+            creation_date: self.creation_date.and_then(|f| Some(f.format("%d/%m/%Y %H:%M").to_string())),
+            published_date: self.published_date.and_then(|f| Some(f.format("%A %d %B %Y").to_string())),
+            is_published: self.is_published,
+            visits: self.visits.and_then(|f| Some(f.to_string())),
+            title: self.title.to_owned(),
+            // #[serde(skip_serializing_if = "Option::is_none")]
+            // tags: Option<String>,
+            blurb: self.blurb.to_owned(),
+        }
+    }
+
+}
+
+
 
 #[get("/", rank=1)]
 async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabase>) -> Template { 
     let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await.unwrap_or(vec![]);
 
-    let filtered_data = match user {
-        Some(_) => data,
-        None => data.into_iter().filter(|item| item.is_published ).collect()
+    let filtered_data: Vec<FormattedDocumentMetaData> = match user {
+        Some(_) => data.into_iter().map(|item| item.display()).collect(),
+        None => data.into_iter().filter(|item| item.is_published ).map(|item| item.display()).collect()
     };
 
     match user {
@@ -251,7 +284,13 @@ async fn publish(_user: User, mut db: Connection<SiteDatabase>, document_id: i64
         Ok(_) => {
             let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE id=?").bind(document_id).fetch_one(&mut *db).await.unwrap();
 
-            Template::render("document_list_item", context! {admin: true, data: data })
+            // match data.published_date {
+            //     Some(time) => format!("{}", date_time.format("%d/%m/%Y %H:%M")),
+            //     None => todo!(),
+            // }
+            
+
+            Template::render("document_list_item", context! {admin: true, data: data.display() })
         },
         Err(err) => err.to_template(),
     }

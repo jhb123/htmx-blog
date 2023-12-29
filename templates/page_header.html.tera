@@ -1,9 +1,20 @@
-<header>
-    <h1>Joe's website</h1>
-    <a href="/">home</a>
-    <a href="/writing">writing</a>
-    {% include "adminToggle" %}
-    {% if admin %}
-    <p>Logged in as admin</p>
-    {% endif %}
+<header class="p-3 bg-gradient-to-b from-slate-200 via-slate-100 to-slate-200 h-26 w-screen
+dark:bg-gradient-to-b dark:from-slate-800 dark:via-slate-700 dark:to-slate-800">
+    <div class="flex justify-between pb-3 content-around">
+        <h1 class="text-4xl sm:text-5xl font-serif text-emerald-700 dark:text-emerald-200">jhb</h1>
+        {% include "adminToggle" %}
+    </div>
+        <nav class="flex gap-4 place-content-center place-items-center content-center h-10">
+            <a hx-boost="true" href="/" class="primary-button">home</a>
+            <a hx-boost="true" href="/writing" class="primary-button">writing</a>
+            <script>
+                $(function () {
+                    $('nav a').filter(function () {
+                        return this.href === location.href;
+                    }).addClass('underline underline-offset-2');
+                });
+            </script>
+        </nav>
+    
+    
 </header>

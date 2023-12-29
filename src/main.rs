@@ -1,14 +1,20 @@
 use std::path::{PathBuf, Path};
+use std::fs;
 
+use htmx_blog::cv::CV;
 use rocket::fairing::AdHoc;
 use rocket::{routes, launch, get};
 use rocket::fs::NamedFile;
 use rocket_dyn_templates::{Template, context};
+use rocket::serde::json::serde_json;
 
 use htmx_blog::auth::api;
 use htmx_blog::auth::api::User;
 use htmx_blog::{db, writing, cv};
 use htmx_blog::config::AppConfig;
+
+
+
 
 #[launch]
 async fn rocket() ->  _ {
@@ -25,11 +31,13 @@ async fn rocket() ->  _ {
 
 #[get("/", rank=1)]
 fn index_admin(user: Option<User>) -> Template { 
-
-        match user {
-            Some(_) =>  Template::render("index", context! { admin: true }),
-            None =>  Template::render("index", context! { admin: false })
-        }
+    let path = "./static/cv.json";
+    let data = fs::read_to_string(path).expect("Unable to read file");
+    let cv_data: CV = serde_json::from_str(&data).unwrap();
+    match user {
+        Some(_) =>  Template::render("index", context! { admin: true, cv_data: cv_data}),
+        None =>  Template::render("index", context! { admin: false, cv_data: cv_data })
+    }
 }
 
 #[get("/js/<path..>", rank = 2)]

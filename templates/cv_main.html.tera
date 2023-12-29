@@ -1,79 +1,102 @@
-<h1>CV</h1>
+<div class="flex flex-col gap-2 px-2 mb-32">
+<h1 class="my-4 text-center font-serif">CV</h1>
 <h2>Intro</h2>
-<p>
+<p class="text-justify sm:pl-8">
 {{cv_data.intro}}
 </p>
+<h2>Programming languages</h2>
+<div class="grid grid-cols-2 sm:grid-cols-4 text-justify sm:pl-8 gap-2">
+    {% for key, value in cv_data.skills["programming languages"] %}
+            {% for skill in value %}
+            <div class="text-center border-2 rounded-lg  border-slate-400 bg-emerald-100 dark:bg-slate-700">
+                <p class="font-mono">{{skill}}</p>
+            </div>
+            {% endfor %}
+    {% endfor %}
+    </div>
 <h2>Skills</h2>
-<p>
-{% for key, value in cv_data.skills["programming languages"] %}
-    <h4>{{key}}</h4>
-    <ul>
-        {% for skill in value %}
-        <li>
-            <p>{{skill}}</p>
-        </li>
-        {% endfor %}
-    </ul>
-{% endfor %}
+<div class="grid grid-cols-2 sm:grid-cols-4 text-justify sm:pl-8 gap-2">
 {% for key, value in cv_data.skills %}
 {% if key != "programming languages" %}
-    <h4>{{key}}</h4>
-    <ul>
         {% for skill in value %}
-        <li>
-            <p>{{skill}}</p>
-        </li>
+        <div class="text-center border-2 rounded-lg  border-slate-400 bg-emerald-100 dark:bg-slate-700">
+            <p class="font-sans">{{skill}}</p>
+        </div>
         {% endfor %}
-    </ul>
 {% endif %}
 {% endfor %}
-<h2>Jobs</h2>
+</div>
+
+<h2>Experience</h2>
 {% for key, value in cv_data["jobs"] %}
-    <h3>{{value.company}}</h3>
-    <ul>
-        {% for role in value.roles %}
-        <li>
-            <h4>{{role.title}}</h4>
-            <p>{{role.dates}}</p>
-            <p>{{role.blurb}}</p>
-            <ul>
-            {% for highlight in role.highlights%}
-                <li>{{highlight}}</li>
+    <div class="flex flex-col sm:flex-row sm:ml-8 p-3 border-2 rounded-lg border-slate-400 bg-emerald-100 dark:bg-slate-700">
+        <h3 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.company}}</h3>
+        <div class="flex flex-col w-full sm:w-2/3">
+            <div class="self-end" >
+            {% for role in value.roles %}
+                <div>
+                    <h5 class="font-bold">{{role.title}}</h5>
+                    <p>{{role.dates}}</p>
+                </div>
+                <div>
+                    <p class="text-justify text-sm sm:text-lg">{{role.blurb}}</p>
+                <ul class="list-disc text-justify pl-4">
+                {% for highlight in role.highlights%}
+                    <li class="text-sm leading-6">{{highlight}}</li>
+                {% endfor %}
+                </div>
+                </ul>
             {% endfor %}
-            </ul>
-        </li>
-        {% endfor %}
-    </ul>
+        </div>
+        </div>
+    </div>
 {% endfor %}
 <h2>Programming Projects</h2>
+
 {% for key, value in cv_data["programming projects"] %}
-    <h3>{{value.name}}</h3>
-    <p>{{value.blurb}}</p>
-    <ul>
-        {% for link in value.links %}
-        <li>
-            <a href={{link}}>{{link}}</a>
-        </li>
-        {% endfor %}
-    </ul>
+<div class="flex flex-col sm:ml-8 p-3 border-2 rounded-lg border-slate-400 bg-emerald-100 dark:bg-slate-700">
+    <h3 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.name}}</h3>
+    <div class="flex flex-col">
+        <div class="self-end sm:w-2/3">
+            <p class="text-sm leading-6 text-justify">{{value.blurb}}</p>
+            <ul class="list-disc pl-4">
+                {% for link in value.links %}
+                <li>
+                    <a class="underline text-sm break-words" href={{link}}>{{link}}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
 {% endfor %}
 <h2>Education</h2>
 {% for key, value in cv_data["education"] %}
-    <h3>{{value.degree}}</h3>
+<div class="sm:flex sm:ml-8 p-3 border-2 rounded-lg border-slate-400 bg-emerald-100 dark:bg-slate-700">
+    <h3 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.degree}}</h3>
+    <div class="flex flex-col text-justify sm:w-2/3 ">
     <p>{{value.university}}</p>
     <p>{{value.dates}}</p>
     <p>{{value.grade}}</p>
-    <ul>
+    <ul class="list-disc text-justify pl-4">
         {% for highlight in value.highlights %}
         <li>
-            <p>{{highlight}}</p>
+            <p class="text-sm leading-6">{{highlight}}</p>
         </li>
         {% endfor %}
     </ul>
+</div>
+</div>
 {% endfor %}
 <h2>Training</h2>
 {% for key, value in cv_data["training"] %}
-    <h3>{{value.title}}</h3>
-    <p>{{value.provider}}</p>
-    <p>{{value.blurb}}</p>
+<div class="sm:flex sm:ml-8 p-3 border-2 rounded-lg border-slate-400 bg-emerald-100 dark:bg-slate-700">
+    <h3 class="text-xl px-4 sm:w-1/3 text-center sm:text-left">{{value.title}}</h3>
+        <div class="flex flex-col text-justify sm:w-2/3 ">
+    <p class="text-sm leading-6">{{value.provider}}</p>
+    <p class="text-sm leading-6">{{value.blurb}}</p>
+    </div>
+    </div>
 {% endfor %}
+</div>

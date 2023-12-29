@@ -5,10 +5,5 @@
 {% block header %}Index{% endblock %}
 
 {% block content %}
-    <p>This is the index</p>
-    {% if admin %}
-        <h3>only for admin's eyes!</h3>
-    {% endif %}
-    <div hx-get="cv" hx-trigger="load" hx-swap="outerHTML"></div>
-
+{% include "cv_main" %}
 {% endblock %}

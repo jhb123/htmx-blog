@@ -6,36 +6,39 @@
 
 {% block content %}
     {% if admin %}
-    <div class="form-container" id="admin-form-container">
-        <h1>Add or update documents</h1>
-        <form id="writing-add-update" hx-post="/writing/upload" hx-encoding='multipart/form-data' hx-swap="innerHTML" hx-target="#documents" hx-on::after-request="this.reset()">
-            <div class="form-group">
-                <label for="document_id">Document I.D.</label>
-                <input type="text" id="document_id" name="document_id" >
+    <div class="admin-form-container bg-white dark:bg-slate-700 m-4 p-4 border-2 border-emerald-200 rounded-lg" id="admin-form-container">
+        <h4>Add or update documents</h4>
+        <form class="flex flex-col w-full" id="writing-add-update" hx-post="/writing/upload" hx-encoding='multipart/form-data' hx-swap="innerHTML" hx-target="#documents" hx-on::after-request="this.reset()">
+            <div class="flex flex-col my-2">
+                <label class="font-mono" for="document_id">Document I.D.</label>
+                <input class="custom-input" type="text" id="document_id" name="document_id" >
             </div>
-            <div class="form-group">
-                <label for="title">Title</label>
-                <input type="text" id="title" name="title">
+            <div class="flex flex-col my-2">
+                <label class="font-mono" for="title">Title</label>
+                <input class="custom-input" type="text" id="title" name="title">
             </div>
-            <div class="form-group">
-                <label for="blurb">Blurb</label>
-                <textarea rows="7" type="text" id="blurb" name="blurb" form="writing-add-update"></textarea>
+            <div class="flex flex-col my-2">
+                <label class="font-mono" for="blurb">Blurb</label>
+                <textarea class="custom-input" rows="7" type="text" id="blurb" name="blurb" form="writing-add-update"></textarea>
             </div>
-            <div class="form-group">
-                <label for="tags">Tags</label>
-                <input type="text" id="tags" name="tags">
+            <div class="flex flex-col my-2">
+                <label class="font-mono" for="tags">Tags</label>
+                <input class="custom-input" type="text" id="tags" name="tags">
             </div>
-            <div class="form-group">
-                <label for="files">Files</label>
-                <input id="files"  name="files" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
-            </div>
-            <input type="submit">
+                {# <label class="bg-green-200" for="files">Files</label> #}
+            <input id="files" class="file:place-content-center file:box-border file:rounded-xl file:border-2 file:hover:shadow-lg file:h-fit file:bg-emerald-200 file:hover:bg-blue-200 ease-in duration-100 file:p-2 file:h-12 font-mono file:hover:font-bold file:mr-4 dark:file:hover:text-emerald-900 dark:file:bg-emerald-700
+            dark:hover:file:bg-emerald-200 
+            dark:file:text-emerald-200 dark:file:border-emerald-200"
+            name="files" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
+            <button class="primary-button place-self-center">
+                <input type="submit">
+            </button>
         </form>
     </div>
     <script src="/js/postDocument.js"></script>
     {% endif %}
-    <h1>Writing</h1>
-    <div id="documents">
-        {% include "document_list" %}
+    <div id="documents" class="flex flex-col gap-4 p-2">
+        <h1 class="my-4 font-serif text-center">Writing</h1>
+    {% include "document_list" %}
     </div>
 {% endblock %}
