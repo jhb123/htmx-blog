@@ -1,7 +1,7 @@
 use std::path::{PathBuf, Path};
 use std::fs;
 
-use htmx_blog::cv::CV;
+use htmx_blog::cv::{CV, Job};
 use rocket::fairing::AdHoc;
 use rocket::{routes, launch, get};
 use rocket::fs::NamedFile;
@@ -10,7 +10,7 @@ use rocket::serde::json::serde_json;
 
 use htmx_blog::auth::api;
 use htmx_blog::auth::api::User;
-use htmx_blog::{db, writing, cv};
+use htmx_blog::{db, writing};
 use htmx_blog::config::AppConfig;
 
 
@@ -24,7 +24,7 @@ async fn rocket() ->  _ {
         .attach(db::stage())
         .attach(api::stage())
         .attach(writing::stage())
-        .attach(cv::stage())
+        // .attach(cv::stage())
         .attach(AdHoc::config::<AppConfig>())
         .attach(Template::fairing())
 }
@@ -34,9 +34,10 @@ fn index_admin(user: Option<User>) -> Template {
     let path = "./static/cv.json";
     let data = fs::read_to_string(path).expect("Unable to read file");
     let cv_data: CV = serde_json::from_str(&data).unwrap();
+    let mut job_data: Vec<Job> = cv_data.jobs.clone();
     match user {
-        Some(_) =>  Template::render("index", context! { admin: true, cv_data: cv_data}),
-        None =>  Template::render("index", context! { admin: false, cv_data: cv_data })
+        Some(_) =>  Template::render("index", context! { admin: true,  cv_data: &cv_data, job_data: job_data}),
+        None =>  Template::render("index", context! { admin: false,  cv_data: &cv_data, job_data: job_data})
     }
 }
 

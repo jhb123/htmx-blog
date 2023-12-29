@@ -65,8 +65,8 @@
             ]
         }
     },
-    "jobs": {
-        "evertz": {
+    "jobs": [
+         {
             "company": "Evertz",
             "roles": [
                 {
@@ -77,7 +77,7 @@
                 }
             ]
         },
-        "motorola": {
+        {
             "company": "Motorola Solutions",
             "roles": [
                 {
@@ -99,7 +99,7 @@
                 }
             ]
         },
-        "ouster": {
+        {
             "company": "Ouster (formerly for Sense Photonics)",
             "roles": [
                 {
@@ -115,7 +115,7 @@
                 }
             ]
         },
-        "caltech" : {
+        {
             "company": "Caltech",
             "roles": [
                 {
@@ -126,7 +126,7 @@
                 }
             ]
         }
-    },
+    ],
     "education" : {
         "phd" : {
             "university" : "University of Glasgow",

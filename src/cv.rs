@@ -1,27 +1,22 @@
-use std::{collections::HashMap, fs};
-
-use rocket::{fairing::AdHoc, routes, get};
-use rocket::serde::json::serde_json;
-use rocket_dyn_templates::{Template, context};
+use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 
 
+// pub fn stage() -> AdHoc {
+//     AdHoc::on_ignite("blog-stage", |rocket| async {
+//         rocket.mount("/cv", routes![cv])
+//     })
+// }
 
-pub fn stage() -> AdHoc {
-    AdHoc::on_ignite("blog-stage", |rocket| async {
-        rocket.mount("/cv", routes![cv])
-    })
-}
 
+// #[get("/", rank=1)]
+// fn cv() -> Template { 
 
-#[get("/", rank=1)]
-fn cv() -> Template { 
-
-    let path = "./static/cv.json";
-    let data = fs::read_to_string(path).expect("Unable to read file");
-    let cv_data: CV = serde_json::from_str(&data).unwrap();
-    Template::render("cv_main", context! { cv_data: cv_data })
-}
+//     let path = "./static/cv.json";
+//     let data = fs::read_to_string(path).expect("Unable to read file");
+//     let cv_data: CV = serde_json::from_str(&data).unwrap();
+//     Template::render("cv_main", context! { cv_data: &cv_data, job_data: &cv_data.jobs })
+// }
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -30,7 +25,7 @@ pub struct CV {
     skills: Skills,
     #[serde(rename = "programming projects")]
     programming_projects: HashMap<String, Project>,
-    jobs: HashMap<String, Job>,
+    pub jobs: Vec<Job>,
     education: HashMap<String, Qualification>,
     training: HashMap<String, Course>,
     interests: String,
@@ -61,13 +56,13 @@ struct Project {
 }
 
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Job {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Job {
     company: String,
     roles: Vec<JobRole>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct JobRole {
     title: String,
     blurb: Option<String>,
