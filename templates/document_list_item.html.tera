@@ -4,11 +4,11 @@
     {% else %}
     <a class="box-border p-3 rounded-lg 
     bg-emerald-50 hover:bg-emerald-100
-    dark:bg-slate-700 dark:hover:bg-emerald-700 
+    dark:bg-slate-700 dark:hover:bg-slate-600 
     ease-in duration-100" href="writing/{{data.id}}"> 
     {% endif %}
             <h1 class="text-3xl">{{data.title | default(value='-') }}</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-200">{{data.published_date | default(value='-') }}</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{data.published_date | default(value='-') }}</p>
             <p class="text-sm mt-4 text-justify leading-loose text-slate-700 dark:text-slate-200">{{data.blurb | default(value='-') }}</p>
     </a>
     {% if admin %}

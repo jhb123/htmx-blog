@@ -131,7 +131,7 @@ impl DocumentMetaData {
         FormattedDocumentMetaData {
             id: self.id.to_string(),
             creation_date: self.creation_date.and_then(|f| Some(f.format("%d/%m/%Y %H:%M").to_string())),
-            published_date: self.published_date.and_then(|f| Some(f.format("%A %d %B %Y").to_string())),
+            published_date: self.published_date.and_then(|f| Some(f.format("%A, %d %B %Y").to_string())),
             is_published: self.is_published,
             visits: self.visits.and_then(|f| Some(f.to_string())),
             title: self.title.to_owned(),
@@ -147,7 +147,7 @@ impl DocumentMetaData {
 
 #[get("/", rank=1)]
 async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabase>) -> Template { 
-    let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db).await.unwrap_or(vec![]);
+    let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing ORDER BY id DESC").fetch_all(&mut *db).await.unwrap_or(vec![]);
 
     let filtered_data: Vec<FormattedDocumentMetaData> = match user {
         Some(_) => data.into_iter().map(|item| item.display()).collect(),
@@ -211,7 +211,7 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
     
 
     // let res = get_document_list(db).await;
-    let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing").fetch_all(&mut *db)
+    let res  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing ORDER BY id DESC").fetch_all(&mut *db)
         .await
         .map_err(|e| DatabaseErrors::SQLx(e.to_string()));
 
@@ -248,14 +248,18 @@ async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>, app_co
         .await;
 
 
-    let document_title = match res {
-        Ok(data) => data.title.unwrap_or("Document".to_string()),
+    let meta_data = match res {
+        Ok(meta_data) => meta_data.display(),
         Err(err) => return (Status::NotFound, err.to_template()),
     };
 
+    let document_title = meta_data.title.unwrap_or(format!("Document {}", meta_data.id));
+
+    let published_date = meta_data.published_date.unwrap_or("Unpublished".to_string());
+
     match fs::read_to_string(path) {
         Ok(html) => {
-            (Status::Ok, Template::render("document", context! {raw_data: html, document_title: document_title }))
+            (Status::Ok, Template::render("document", context! {raw_data: html, document_title: document_title,published_date: published_date }))
         },
         Err(err) => (Status::InternalServerError, err.to_template())
 
