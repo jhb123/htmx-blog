@@ -14,7 +14,7 @@ use crate::{auth::api::User, db::SiteDatabase, config::AppConfig};
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("blog-stage", |rocket| async {
-        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish,delete_stuff])
+        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish,delete_stuff, search])
     })
 }
 
@@ -159,6 +159,26 @@ async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabas
         None => Template::render("writing",context!{admin:false, blog_data: filtered_data}), 
     }
 
+}
+
+#[get("/search?<title>")]
+async fn search(user: Option<User>, mut db: Connection<SiteDatabase>, title: String) -> Template { 
+    let data  = 
+    sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE title LIKE ? ORDER BY id DESC")
+        .bind(title)
+        .fetch_all(&mut *db).await.unwrap_or(vec![]);
+
+    println!("number of results: {}", data.len());
+
+        let filtered_data: Vec<FormattedDocumentMetaData> = match user {
+            Some(_) => data.into_iter().map(|item| item.display()).collect(),
+            None => data.into_iter().filter(|item| item.is_published ).map(|item| item.display()).collect()
+        };
+    
+        match user {
+            Some(_) => Template::render("document_list",context!{admin:true,blog_data: filtered_data}),
+            None => Template::render("document_list",context!{admin:false, blog_data: filtered_data}), 
+        }
 }
 
 #[post("/upload", data = "<upload>")]
@@ -473,17 +493,3 @@ fn modify_dom_img_src(document: &NodeRef, guid: &String){
         }
     }
 }
-
-// impl DocumentMetaData {
-//     fn default() -> DocumentMetaData{
-//         DocumentMetaData{
-//             title: Some("test Title".to_string()),
-//             blurb:Some("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".to_string()),
-//             id: 10000,
-//             creation_date: Some(Utc::now()),
-//             published_date: Some(Utc::now()),
-//             is_published: Some(true),
-//             visits: Some(100),
-//         }
-//     }
-// }
