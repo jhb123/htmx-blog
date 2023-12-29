@@ -10,7 +10,7 @@
     </span>
 {% endif %}
 </button>
-<dialog id="adminDialog" class="backdrop:backdrop-blur backdrop-opacity-10 p-4 border-2 border-black rounded-lg">
+<dialog id="adminDialog" class="backdrop:backdrop-blur backdrop-opacity-10 p-4 border-2 dark:bg-slate-700 dark:text-emerald-200 rounded-lg">
     {% if admin %}
     <h4 class="text-center">Log in as admin</h4>
     <form class="p-2" id="logout" method=post action='/auth/logout' hx-swap="innerHTML" hx-target="body" onsubmit="document.getElementById('url').value = window.location.href;">

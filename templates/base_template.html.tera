@@ -28,7 +28,7 @@
 
 
 </head>
-<body hx-boost id="main-body" class="bg-teal-50 w-screen">
+<body hx-boost id="main-body" class="bg-slate-50 dark:bg-slate-900 w-screen text-slate-900 dark:text-emerald-200">
     {% include "page_header" %}
         <main class="flex flex-col max-w-full sm:max-w-3xl mx-auto">
             {% block content %}{% endblock %}

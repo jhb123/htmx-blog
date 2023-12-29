@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-2 px-2 mb-32">
-<h1 class="my-4 text-center">CV</h1>
+<h1 class="my-4 text-center font-serif">CV</h1>
 <h2>Intro</h2>
 <p class="text-justify sm:pl-8">
 {{cv_data.intro}}
@@ -8,7 +8,7 @@
 <div class="grid grid-cols-2 sm:grid-cols-4 text-justify sm:pl-8 gap-2">
     {% for key, value in cv_data.skills["programming languages"] %}
             {% for skill in value %}
-            <div class="text-center border-2 border-slate-400 rounded-lg bg-slate-200">
+            <div class="text-center border-2 rounded-lg  border-slate-400 bg-emerald-100 dark:bg-slate-700">
                 <p class="font-mono">{{skill}}</p>
             </div>
             {% endfor %}
@@ -19,7 +19,7 @@
 {% for key, value in cv_data.skills %}
 {% if key != "programming languages" %}
         {% for skill in value %}
-        <div class="text-center border-2 border-indigo-400 rounded-lg bg-indigo-200">
+        <div class="text-center border-2 rounded-lg  border-slate-400 bg-emerald-100 dark:bg-slate-700">
             <p class="font-sans">{{skill}}</p>
         </div>
         {% endfor %}
@@ -29,8 +29,8 @@
 
 <h2>Experience</h2>
 {% for key, value in cv_data["jobs"] %}
-    <div class="flex flex-col sm:flex-row sm:ml-8 p-3 border-2 border-pink-200 rounded-lg bg-orange-50">
-        <h4 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.company}}</h4>
+    <div class="flex flex-col sm:flex-row sm:ml-8 p-3 border-2 rounded-lg border-slate-400 bg-emerald-100 dark:bg-slate-700">
+        <h3 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.company}}</h3>
         <div class="flex flex-col w-full sm:w-2/3">
             <div class="self-end" >
             {% for role in value.roles %}
@@ -54,8 +54,8 @@
 <h2>Programming Projects</h2>
 
 {% for key, value in cv_data["programming projects"] %}
-<div class="flex flex-col sm:ml-8 p-3 border-2 border-sky-200 rounded-lg  bg-slate-50">
-    <h5 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.name}}</h5>
+<div class="flex flex-col sm:ml-8 p-3 border-2 rounded-lg border-slate-400 bg-emerald-100 dark:bg-slate-700">
+    <h3 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.name}}</h3>
     <div class="flex flex-col">
         <div class="self-end sm:w-2/3">
             <p class="text-sm leading-6 text-justify">{{value.blurb}}</p>
@@ -73,8 +73,8 @@
 {% endfor %}
 <h2>Education</h2>
 {% for key, value in cv_data["education"] %}
-<div class="sm:flex sm:ml-8 p-3 border-2 border-red-200 rounded-lg bg-lime-50">
-    <h5 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.degree}}</h5>
+<div class="sm:flex sm:ml-8 p-3 border-2 rounded-lg border-slate-400 bg-emerald-100 dark:bg-slate-700">
+    <h3 class="px-4 w-full sm:w-1/3 text-center sm:text-left">{{value.degree}}</h3>
     <div class="flex flex-col text-justify sm:w-2/3 ">
     <p>{{value.university}}</p>
     <p>{{value.dates}}</p>
@@ -91,9 +91,8 @@
 {% endfor %}
 <h2>Training</h2>
 {% for key, value in cv_data["training"] %}
-<div class="sm:flex sm:ml-8 p-3 border-2 border-pink-200 rounded-lg bg-fuchsia-50">
-
-    <h5 class="px-4 sm:w-1/3 text-center sm:text-left">{{value.title}}</h3>
+<div class="sm:flex sm:ml-8 p-3 border-2 rounded-lg border-slate-400 bg-emerald-100 dark:bg-slate-700">
+    <h3 class="text-xl px-4 sm:w-1/3 text-center sm:text-left">{{value.title}}</h3>
         <div class="flex flex-col text-justify sm:w-2/3 ">
     <p class="text-sm leading-6">{{value.provider}}</p>
     <p class="text-sm leading-6">{{value.blurb}}</p>
