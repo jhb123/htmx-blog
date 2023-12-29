@@ -5,22 +5,22 @@
 @layer base {
 
   h1 {
-    @apply text-5xl my-2;
+    @apply text-5xl my-2 font-serif;
   }
   h2 {
-    @apply text-4xl my-2;
+    @apply text-4xl my-2 font-serif;
   }
   h3 {
-    @apply text-3xl my-2; 
+    @apply text-3xl my-2 font-serif; 
   }
   h4 {
-    @apply text-2xl my-2;
+    @apply text-2xl my-2 font-serif;
   }
   h5 {
-    @apply text-xl my-2;
+    @apply text-xl my-2 font-serif;
   }
   h6 {
-    @apply text-lg leading-9 my-2;
+    @apply text-lg leading-9 my-2 font-serif;
   }
   p {
     @apply leading-9 my-2;
