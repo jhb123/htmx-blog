@@ -255,7 +255,7 @@ async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>, app_co
 
     let document_title = meta_data.title.unwrap_or(format!("Document {}", meta_data.id));
 
-    let published_date = meta_data.published_date.unwrap_or("Unpublished".to_string());
+    let published_date = meta_data.published_date.unwrap_or("-".to_string());
 
     match fs::read_to_string(path) {
         Ok(html) => {
