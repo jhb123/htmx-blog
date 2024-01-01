@@ -5,11 +5,9 @@
 {% block header %}Writing{% endblock %}
 
 {% block content %}
-<div>
-    <div id="tag-div" class="flex p-2 lg:mb-0 mb-20 flex-col-reverse lg:flex-col fixed lg:left-0 lg:top-auto lg:bottom-auto lg:right-auto transition-transform ease-in-out duration-500 right-0 bottom-0">
+    <div id="tag-div" class="flex p-2 lg:mb-0 mb-20 flex-col-reverse lg:flex-col fixed lg:left-0 lg:top-auto lg:bottom-auto lg:right-auto transition-transform ease-in-out duration-500 right-0 bottom-0 lg:ml-2 justify-center w-32">
         {% include "tag_tab" %}
     </div>
-</div>
     {% if admin %}
     <div class="admin-form-container bg-white dark:bg-slate-700 m-4 p-4 border-2 border-emerald-200 rounded-lg" id="admin-form-container">
         <h4>Add or update documents</h4>
