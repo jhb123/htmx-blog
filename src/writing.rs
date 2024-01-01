@@ -14,7 +14,7 @@ use crate::{auth::api::User, db::SiteDatabase, config::AppConfig};
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("blog-stage", |rocket| async {
-        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish,delete_stuff, search])
+        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish,delete_stuff, search, tags])
     })
 }
 
@@ -147,16 +147,37 @@ impl DocumentMetaData {
 async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabase>) -> Template { 
     let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing ORDER BY id DESC").fetch_all(&mut *db).await.unwrap_or(vec![]);
 
+
     let filtered_data: Vec<FormattedDocumentMetaData> = match user {
         Some(_) => data.into_iter().map(|item| item.display()).collect(),
         None => data.into_iter().filter(|item| item.is_published ).map(|item| item.display()).collect()
     };
 
+    let tag_data  = sqlx::query("SELECT tag FROM writing ORDER BY tag ASC").fetch_all(&mut *db).await;
+
+    let tags: Vec<String> = match tag_data {
+        Ok(row) => row.iter().filter_map(|x| x.try_get("tag").ok()).collect(),
+        Err(e) => return e.to_template(),
+    };
+
     match user {
-        Some(_) => Template::render("writing",context!{admin:true,blog_data: filtered_data}),
-        None => Template::render("writing",context!{admin:false, blog_data: filtered_data}), 
+        Some(_) => Template::render("writing",context!{admin:true,blog_data: filtered_data, tags_expanded: false, tags: tags}),
+        None => Template::render("writing",context!{admin:false, blog_data: filtered_data, tags_expanded: false, tags: tags}), 
     }
 
+}
+
+#[get("/tags?<open>")]
+async fn tags(open: bool, mut db: Connection<SiteDatabase>) -> Template {
+
+    let tag_data  = sqlx::query("SELECT tag FROM writing ORDER BY tag ASC").fetch_all(&mut *db).await;
+
+    let tags: Vec<String> = match tag_data {
+        Ok(row) => row.iter().filter_map(|x| x.try_get("tag").ok()).collect(),
+        Err(e) => return e.to_template(),
+    };
+
+    return Template::render("tag_tab", context!{tags_expanded: open, tags: tags})
 }
 
 #[get("/search?<title>&<tag>")]
