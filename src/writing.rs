@@ -30,10 +30,8 @@ struct Upload<'r> {
     title: String,
     blurb: String,
     files: Vec<TempFile<'r>>,
-    tags: Option<String> // will implement this one day
+    tag: String
 }
-
-// impl Upload<'_> {
 
 
 trait RenderErrorTemplate {
@@ -104,8 +102,8 @@ struct DocumentMetaData {
     visits: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     title: Option<String>,
-    // #[serde(skip_serializing_if = "Option::is_none")]
-    // tags: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tag: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     blurb: Option<String>,
 }
@@ -121,7 +119,7 @@ struct FormattedDocumentMetaData {
     visits: Option<String>,
     title: Option<String>,
     // #[serde(skip_serializing_if = "Option::is_none")]
-    // tags: Option<String>,
+    tag: Option<String>,
     blurb: Option<String>,
 }
 
@@ -136,7 +134,7 @@ impl DocumentMetaData {
             visits: self.visits.and_then(|f| Some(f.to_string())),
             title: self.title.to_owned(),
             // #[serde(skip_serializing_if = "Option::is_none")]
-            // tags: Option<String>,
+            tag: self.tag.to_owned(),
             blurb: self.blurb.to_owned(),
         }
     }
@@ -340,10 +338,11 @@ async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, document_id:
 async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64, DatabaseErrors>{
 
     let query_result = sqlx::query("INSERT INTO writing 
-    (is_published, visits, title, blurb) 
-    VALUES (false, 0, ?, ?)")
+    (is_published, visits, title, blurb, tag) 
+    VALUES (false, 0, ?, ?, ?)")
         .bind(&upload.title)
         .bind(&upload.blurb)
+        .bind(&upload.tag)
         .execute(db)
         .await?;
 
@@ -354,13 +353,10 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
     // let null_str = "Null".to_string();
     let title = if &upload.title != "" {Some(&upload.title)} else {None};//.
     let blurb = if &upload.blurb != "" {Some(&upload.blurb)} else {None};//.
+    let tag = if &upload.tag != "" {Some(&upload.tag)} else {None};//.
     let document_id = upload.document_id.unwrap();
 
-    println!("updating article");
-    println!("title is {:?}", title);    
-    println!("blurb is {:?}", blurb);    
-
-    if title.is_none() && blurb.is_none() {
+    if title.is_none() && blurb.is_none() && tag.is_none() {
 
         //sqlx::query("SELECT EXISTS (SELECT * FROM articles WHERE document_id=?) AS result");
 
@@ -397,6 +393,13 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
         } // else { enable_seperator = true;};
         query_builder.push("blurb = ");
         query_builder.push_bind(blurb);
+    }
+    if let Some(tag) = tag {
+        if enable_seperator {
+            query_builder.push(", ");
+        } // else { enable_seperator = true;};
+        query_builder.push("tag = ");
+        query_builder.push_bind(tag);
     }
 
     query_builder.push(" WHERE id = ");
