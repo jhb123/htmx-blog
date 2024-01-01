@@ -159,12 +159,41 @@ async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabas
 
 }
 
-#[get("/search?<title>")]
-async fn search(user: Option<User>, mut db: Connection<SiteDatabase>, title: String) -> Template { 
-    let data  = 
-    sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE title LIKE ? ORDER BY id DESC")
-        .bind(title)
-        .fetch_all(&mut *db).await.unwrap_or(vec![]);
+#[get("/search?<title>&<tag>")]
+async fn search(user: Option<User>, mut db: Connection<SiteDatabase>, title: Option<String>, tag: Option<String>) -> Template { 
+
+    dbg!(&title);
+    dbg!(&tag);
+
+    let data = match (tag,title) {
+        (None,None) => {
+            sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing ORDER BY id DESC")
+                .fetch_all(&mut *db).await.unwrap_or(vec![])
+        },
+        (Some(tag),None) => {
+            sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE tag=? ORDER BY id DESC")
+                .bind(tag)
+                .fetch_all(&mut *db).await.unwrap_or(vec![])
+        },
+        (None,Some(title)) => {
+            sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE title LIKE ? ORDER BY id DESC")
+                .bind(title)
+                .fetch_all(&mut *db).await.unwrap_or(vec![])
+        },
+        (Some(title),Some(tag)) => {
+            sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE title LIKE ? and tag=? ORDER BY id DESC")
+                .bind(title)
+                .bind(tag)
+                .fetch_all(&mut *db).await.unwrap_or(vec![])
+        },
+
+    };
+
+    // let data  = 
+    // sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE title LIKE ? ORDER BY id DESC")
+    //     .bind(title)
+    //     .bind(tag)
+    //     .fetch_all(&mut *db).await.unwrap_or(vec![]);
 
     println!("number of results: {}", data.len());
 
@@ -178,6 +207,8 @@ async fn search(user: Option<User>, mut db: Connection<SiteDatabase>, title: Str
             None => Template::render("document_list",context!{admin:false, blog_data: filtered_data}), 
         }
 }
+
+
 
 #[post("/upload", data = "<upload>")]
 async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> (Status, Template){ 
