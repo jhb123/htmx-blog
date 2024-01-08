@@ -34,7 +34,7 @@ fn index_admin(user: Option<User>) -> Template {
     let path = "./static/cv.json";
     let data = fs::read_to_string(path).expect("Unable to read file");
     let cv_data: CV = serde_json::from_str(&data).unwrap();
-    let mut job_data: Vec<Job> = cv_data.jobs.clone();
+    let job_data: Vec<Job> = cv_data.jobs.clone();
     match user {
         Some(_) =>  Template::render("index", context! { admin: true,  cv_data: &cv_data, job_data: job_data}),
         None =>  Template::render("index", context! { admin: false,  cv_data: &cv_data, job_data: job_data})

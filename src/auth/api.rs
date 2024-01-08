@@ -7,9 +7,9 @@ use rocket::{
     post,
     request::{FromRequest, Outcome},
     response::Redirect,
-    routes, catchers,
+    routes,
     time::OffsetDateTime,
-    FromForm, Request, catch,
+    FromForm, Request,
 };
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};

@@ -20,7 +20,6 @@ Notes on each file:
     ```
     export ROCKET_PROFILE="debug"
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@0.0.0.0:3306/blog"}}
-    export ROCKET_TLS={certs="secrets/cert.pem",key="secrets/key.pem"}
     export ROCKET_ADMIN_HASH="..."
     export ROCKET_WRITING_DIR="./writing"
     ```
@@ -29,7 +28,6 @@ Notes on each file:
     ```
     export ROCKET_PROFILE="debug"
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@db:3306/blog"}}
-    export ROCKET_TLS={certs="/run/secrets/cert",key="/run/secrets/key"}
     export ROCKET_ADMIN_HASH="..."
     export ROCKET_WRITING_DIR="/writing"
     ```

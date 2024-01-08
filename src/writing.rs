@@ -14,7 +14,7 @@ use crate::{auth::api::User, db::SiteDatabase, config::AppConfig};
 
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("blog-stage", |rocket| async {
-        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish,delete_stuff])
+        rocket.mount("/writing", routes![main_blog_page_admin, upload_form,get_article,get_image,publish,delete_stuff, search, tags])
     })
 }
 
@@ -30,10 +30,8 @@ struct Upload<'r> {
     title: String,
     blurb: String,
     files: Vec<TempFile<'r>>,
-    tags: Option<String> // will implement this one day
+    tag: String
 }
-
-// impl Upload<'_> {
 
 
 trait RenderErrorTemplate {
@@ -104,8 +102,8 @@ struct DocumentMetaData {
     visits: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     title: Option<String>,
-    // #[serde(skip_serializing_if = "Option::is_none")]
-    // tags: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    tag: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     blurb: Option<String>,
 }
@@ -121,7 +119,7 @@ struct FormattedDocumentMetaData {
     visits: Option<String>,
     title: Option<String>,
     // #[serde(skip_serializing_if = "Option::is_none")]
-    // tags: Option<String>,
+    tag: Option<String>,
     blurb: Option<String>,
 }
 
@@ -136,7 +134,7 @@ impl DocumentMetaData {
             visits: self.visits.and_then(|f| Some(f.to_string())),
             title: self.title.to_owned(),
             // #[serde(skip_serializing_if = "Option::is_none")]
-            // tags: Option<String>,
+            tag: self.tag.to_owned(),
             blurb: self.blurb.to_owned(),
         }
     }
@@ -149,17 +147,89 @@ impl DocumentMetaData {
 async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabase>) -> Template { 
     let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing ORDER BY id DESC").fetch_all(&mut *db).await.unwrap_or(vec![]);
 
+
     let filtered_data: Vec<FormattedDocumentMetaData> = match user {
         Some(_) => data.into_iter().map(|item| item.display()).collect(),
         None => data.into_iter().filter(|item| item.is_published ).map(|item| item.display()).collect()
     };
 
+    let tag_data  = sqlx::query("SELECT tag FROM writing ORDER BY tag ASC").fetch_all(&mut *db).await;
+
+    let tags: Vec<String> = match tag_data {
+        Ok(row) => row.iter().filter_map(|x| x.try_get("tag").ok()).collect(),
+        Err(e) => return e.to_template(),
+    };
+
     match user {
-        Some(_) => Template::render("writing",context!{admin:true,blog_data: filtered_data}),
-        None => Template::render("writing",context!{admin:false, blog_data: filtered_data}), 
+        Some(_) => Template::render("writing",context!{admin:true,blog_data: filtered_data, tags_expanded: false, tags: tags}),
+        None => Template::render("writing",context!{admin:false, blog_data: filtered_data, tags_expanded: false, tags: tags}), 
     }
 
 }
+
+#[get("/tags?<open>")]
+async fn tags(open: bool, mut db: Connection<SiteDatabase>) -> Template {
+
+    let tag_data  = sqlx::query("SELECT tag FROM writing ORDER BY tag ASC").fetch_all(&mut *db).await;
+
+    let tags: Vec<String> = match tag_data {
+        Ok(row) => row.iter().filter_map(|x| x.try_get("tag").ok()).collect(),
+        Err(e) => return e.to_template(),
+    };
+
+    return Template::render("tag_tab", context!{tags_expanded: open, tags: tags})
+}
+
+#[get("/search?<title>&<tag>")]
+async fn search(user: Option<User>, mut db: Connection<SiteDatabase>, title: Option<String>, tag: Option<String>) -> Template { 
+
+    dbg!(&title);
+    dbg!(&tag);
+
+    let data = match (tag,title) {
+        (None,None) => {
+            sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing ORDER BY id DESC")
+                .fetch_all(&mut *db).await.unwrap_or(vec![])
+        },
+        (Some(tag),None) => {
+            sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE tag=? ORDER BY id DESC")
+                .bind(tag)
+                .fetch_all(&mut *db).await.unwrap_or(vec![])
+        },
+        (None,Some(title)) => {
+            sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE title LIKE ? ORDER BY id DESC")
+                .bind(title)
+                .fetch_all(&mut *db).await.unwrap_or(vec![])
+        },
+        (Some(title),Some(tag)) => {
+            sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE title LIKE ? and tag=? ORDER BY id DESC")
+                .bind(title)
+                .bind(tag)
+                .fetch_all(&mut *db).await.unwrap_or(vec![])
+        },
+
+    };
+
+    // let data  = 
+    // sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing WHERE title LIKE ? ORDER BY id DESC")
+    //     .bind(title)
+    //     .bind(tag)
+    //     .fetch_all(&mut *db).await.unwrap_or(vec![]);
+
+    println!("number of results: {}", data.len());
+
+        let filtered_data: Vec<FormattedDocumentMetaData> = match user {
+            Some(_) => data.into_iter().map(|item| item.display()).collect(),
+            None => data.into_iter().filter(|item| item.is_published ).map(|item| item.display()).collect()
+        };
+    
+        match user {
+            Some(_) => Template::render("document_list",context!{admin:true,blog_data: filtered_data}),
+            None => Template::render("document_list",context!{admin:false, blog_data: filtered_data}), 
+        }
+}
+
+
 
 #[post("/upload", data = "<upload>")]
 async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> (Status, Template){ 
@@ -255,7 +325,7 @@ async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>, app_co
 
     let document_title = meta_data.title.unwrap_or(format!("Document {}", meta_data.id));
 
-    let published_date = meta_data.published_date.unwrap_or("Unpublished".to_string());
+    let published_date = meta_data.published_date.unwrap_or("-".to_string());
 
     match fs::read_to_string(path) {
         Ok(html) => {
@@ -320,10 +390,11 @@ async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, document_id:
 async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64, DatabaseErrors>{
 
     let query_result = sqlx::query("INSERT INTO writing 
-    (is_published, visits, title, blurb) 
-    VALUES (false, 0, ?, ?)")
+    (is_published, visits, title, blurb, tag) 
+    VALUES (false, 0, ?, ?, ?)")
         .bind(&upload.title)
         .bind(&upload.blurb)
+        .bind(&upload.tag)
         .execute(db)
         .await?;
 
@@ -334,13 +405,10 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
     // let null_str = "Null".to_string();
     let title = if &upload.title != "" {Some(&upload.title)} else {None};//.
     let blurb = if &upload.blurb != "" {Some(&upload.blurb)} else {None};//.
+    let tag = if &upload.tag != "" {Some(&upload.tag)} else {None};//.
     let document_id = upload.document_id.unwrap();
 
-    println!("updating article");
-    println!("title is {:?}", title);    
-    println!("blurb is {:?}", blurb);    
-
-    if title.is_none() && blurb.is_none() {
+    if title.is_none() && blurb.is_none() && tag.is_none() {
 
         //sqlx::query("SELECT EXISTS (SELECT * FROM articles WHERE document_id=?) AS result");
 
@@ -377,6 +445,13 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
         } // else { enable_seperator = true;};
         query_builder.push("blurb = ");
         query_builder.push_bind(blurb);
+    }
+    if let Some(tag) = tag {
+        if enable_seperator {
+            query_builder.push(", ");
+        } // else { enable_seperator = true;};
+        query_builder.push("tag = ");
+        query_builder.push_bind(tag);
     }
 
     query_builder.push(" WHERE id = ");
@@ -473,17 +548,3 @@ fn modify_dom_img_src(document: &NodeRef, guid: &String){
         }
     }
 }
-
-// impl DocumentMetaData {
-//     fn default() -> DocumentMetaData{
-//         DocumentMetaData{
-//             title: Some("test Title".to_string()),
-//             blurb:Some("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".to_string()),
-//             id: 10000,
-//             creation_date: Some(Utc::now()),
-//             published_date: Some(Utc::now()),
-//             is_published: Some(true),
-//             visits: Some(100),
-//         }
-//     }
-// }
