@@ -20,6 +20,7 @@ Notes on each file:
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@0.0.0.0:3306/blog"}}
     export ROCKET_ADMIN_HASH="..."
     export ROCKET_WRITING_DIR="./writing"
+    export DATABASE_URL="mysql://root:bilboFan@0.0.0.0:3306/blog"
     ```
     The hashed password should be generated with the sha256 function, and this can be done on various websites.
 - `.env_deploy` has the environment variables needed to run the server in the dockerised application. Its very similar to the one above, but the host name of the MySQL is different and the location of the TLS certificate and key are in a different place.
