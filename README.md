@@ -32,11 +32,17 @@ Notes on each file:
     
 - `.env_deploy` has the environment variables needed to run the server in the dockerised application. Its very similar to the one above, but the host name of the MySQL is different and the location of the TLS certificate and key are in a different place.
     ```
-    export ROCKET_PROFILE="debug"
+    export ROCKET_PROFILE="release"
     export ROCKET_DATABASES={sqlx={url="mysql://root:<db_root_password>@db:3306/blog"}}
     export ROCKET_ADMIN_HASH="..."
     export ROCKET_WRITING_DIR="/writing"
+    export ROCKET_SECRET_KEY="..."
     ```
+    The secret key can be generated with openssl
+    ```
+    openssl rand -base64 32
+    ```
+    The secret key will look something like `hPrYyЭRiMyµ5sBB1π+CMæ1køFsåqKvBiQJxBVHQk=`
 - `db_root_password.txt` contains a password needed for MySQL.
 - `db_password.txt` contains a password needed for MySQL.
 
