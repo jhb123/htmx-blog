@@ -24,9 +24,6 @@ services:
       - secrets/.env_deploy
     ports:
       - 8000:8000
-    secrets:
-      - cert
-      - key
     volumes:
       - type: bind
         source: ./writing
@@ -37,11 +34,6 @@ secrets:
     file: secrets/db_password.txt
   db_root_password:
     file: secrets/db_root_password.txt
-  cert:
-    file: secrets/cert.pem
-  key:
-    file: secrets/key.pem
-
 
 volumes:
     db_data:
