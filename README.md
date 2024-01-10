@@ -22,7 +22,14 @@ Notes on each file:
     export ROCKET_WRITING_DIR="./writing"
     export DATABASE_URL="mysql://root:bilboFan@0.0.0.0:3306/blog"
     ```
-    The hashed password should be generated with the sha256 function, and this can be done on various websites.
+    The hashed password should be generated with the sha256 function, and this can be done with open ssl
+    ```
+    # with sha256sum
+    echo -n foobar | sha256sum
+    # with open ssl
+    echo -n "foobar" | openssl dgst -sha256
+    ```
+    
 - `.env_deploy` has the environment variables needed to run the server in the dockerised application. Its very similar to the one above, but the host name of the MySQL is different and the location of the TLS certificate and key are in a different place.
     ```
     export ROCKET_PROFILE="debug"
