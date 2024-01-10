@@ -10,10 +10,8 @@ This application is made of two parts: the server and the MySQL database. Before
 └── secrets/
     ├── .env_local
     ├── .env_deploy
-    ├── cert.pem
     ├── db_password.txt
-    ├── db_root_password.txt
-    └── key.pem
+    └── db_root_password.txt
 ```
 Notes on each file:
 - `.env_local` is optional and is for development purposes. Make sure the password matches what is in `db_root_password.txt`. It should contain the following:
@@ -33,7 +31,7 @@ Notes on each file:
     ```
 - `db_root_password.txt` contains a password needed for MySQL.
 - `db_password.txt` contains a password needed for MySQL.
-- `key.pem` and `cert.pem` should be generated with something like openssl.
+
   
 ### Running it with `docker`
 This following two commands will start both the database and the server.
@@ -41,13 +39,58 @@ This following two commands will start both the database and the server.
 $ docker compose build
 $ docker compose up -d
 ``` 
-There may be an issue where the MySQL server hasn't fully started and the server will fail to start. If this happens, run the `up` command again.
+I have seen an issue where the MySQL server hasn't fully started and the server will fail to start. If this happens, run the `up` command again.
 
+You can verify this has worked by checking
+
+```
+curl http://0.0.0.0:8000
+```
+returns some HTML 
 ### Where are the uploaded documents stored
 
 The location of where documents are stored is configured with the environment variable `ROCKET_WRITING_DIR`. While developing locally, it is convenient to store this data in a directory called "writing" in the top level directory of this project. This directory is mounted with a bind mount with the docker compose file, so the website will work if you run it with cargo or if you run it docker.
 
-### Deploying on the server development machine
+### Reverse proxy through nginx
+
+nginx lets you set a reverse proxy and handle TLS in a rather straight forward way. Install nginx on the machine you want to serve the website from.
+
+Generate a key and a certificate with
+
+`key.pem` and `cert.pem` should be generated with something like openssl e.g.
+```bash 
+$ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
+```
+Create a configuration file in `/etc/nginx/conf.d/blog.conf` with the following contents
+```
+server {
+    listen 443 ssl;
+
+    server_name jhb.blog.test;
+    
+    ssl_certificate /home/joseph/nginx/certs/blog_cert.pem;
+    ssl_certificate_key /home/joseph/nginx/keys/blog_key.pem;
+
+    location / {
+        proxy_pass http://localhost:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_http_version 1.1;
+    }
+}
+```
+To view this while on your local network without registering any domain names or setting up your router in a special way, add this to the `/etc/hosts` file on the client machine.
+```
+# webdev tests
+<IP of host machine> jhb.blog.test
+```
+You will now be able to access the site via https://jhb.blog.test - (ignore the warning that browsers give you!)
+
+### Deploying the server on a development machine
 This requires you to have cargo set up. First, you should start the MySQL server with docker compose
 ```console
 $ docker compose up -d db
