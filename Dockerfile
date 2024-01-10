@@ -48,7 +48,7 @@ FROM debian:bullseye-slim AS final
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
 # RUN --mount=type=bind,source=secrets,target=secrets
-RUN --mount=type=bind,source=Rocket.toml,target=Rocket.toml
+# RUN --mount=type=bind,source=Rocket.toml,target=Rocket.toml
 
 ARG UID=10001
 RUN adduser \
