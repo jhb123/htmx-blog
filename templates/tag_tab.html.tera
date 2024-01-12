@@ -8,10 +8,10 @@
     </span></button>
 {% endif %}
 {% if tags_expanded %}
-<div id="tags" class="flex flex-col bg-slate-800 divide-y outline scroll-smooth max-h-64 overflow-y-auto">
-    <button id="all-btn" class="text-slate-900 dark:text-slate-100 hover:bg-slate-500 py-2" hx-get="/writing/search" hx-swap="innerHTML" hx-target="#documents">All</button>
+<div id="tags" class="flex flex-col bg-slate-200 dark:bg-slate-800 divide-y outline scroll-smooth max-h-64 overflow-y-auto">
+    <button id="all-btn" class="text-slate-900 dark:text-slate-100 hover:bg-emerald-200 dark:hover:bg-slate-500 py-2" hx-get="/writing/search" hx-swap="innerHTML" hx-target="#documents">All</button>
     {% for item in tags %}
-        <button id="{{item}}-btn" class="text-slate-900 dark:text-slate-100 hover:bg-slate-500 py-2" hx-get="/writing/search?tag={{item}}" hx-swap="innerHTML" hx-target="#documents">{{item}}</button>
+        <button id="{{item}}-btn" class="text-slate-900 dark:text-slate-100 hover:bg-emerald-200 dark:hover:bg-slate-500 py-2" hx-get="/writing/search?tag={{item}}" hx-swap="innerHTML" hx-target="#documents">{{item}}</button>
     {% endfor %}
 </div>
 {% else %}

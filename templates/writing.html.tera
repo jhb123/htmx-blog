@@ -29,11 +29,10 @@
                 <input class="custom-input" type="text" id="tag" name="tag">
             </div>
                 {# <label class="bg-green-200" for="files">Files</label> #}
-            <input id="files" class="file:place-content-center file:box-border file:rounded-xl file:border-2 file:hover:shadow-lg file:h-fit file:bg-emerald-200 file:hover:bg-blue-200 ease-in duration-100 file:p-2 file:h-12 font-mono file:hover:font-bold file:mr-4 dark:file:hover:text-emerald-900 dark:file:bg-emerald-700
-            dark:hover:file:bg-emerald-200 
-            dark:file:text-emerald-200 dark:file:border-emerald-200"
+            <input id="files" class="file:place-content-center file:box-border file:rounded-xl file:border-2 file:hover:shadow-lg file:h-fit file:bg-emerald-500 file:hover:bg-emerald-400 dark:file:hover:bg-emerald-600 ease-in duration-100 file:p-2 file:h-12 font-mono file:hover:font-bold file:mr-4  dark:file:bg-emerald-700
+            dark:file:text-emerald-200 dark:file:border-emerald-200 file:border-solid file:border-black" 
             name="files" type="file" accept="text/markdown, .md, .markdown, image/png, image/jpeg" multiple  />
-            <button class="primary-button place-self-center">
+            <button class="primary-button place-self-center mt-4">
                 <input type="submit">
             </button>
         </form>
