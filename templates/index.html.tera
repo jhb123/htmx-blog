@@ -1,8 +1,5 @@
 {% extends "base_template" %}
 
-{% block title %}Index{% endblock %}
-
-{% block header %}Index{% endblock %}
 
 {% block content %}
 {% include "cv_main" %}

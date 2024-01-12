@@ -2,8 +2,6 @@
 
 {% block title %}Writing{% endblock %}
 
-{% block header %}Writing{% endblock %}
-
 {% block content %}
     <div id="tag-div" class="flex p-2 lg:mb-0 mb-20 flex-col-reverse lg:flex-col fixed lg:left-0 lg:top-auto lg:bottom-auto lg:right-auto transition-transform ease-in-out duration-500 right-0 bottom-0 lg:ml-2 justify-center w-32">
         {% include "tag_tab" %}
