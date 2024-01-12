@@ -123,8 +123,8 @@ Add a migration with `sqlx migrate add --source db/migrations <name of migration
 
 Never delete or modify the files in `db/migrations`. If you need a new migration, you must add them correctly otherwise you will mess up the MySQL database.
 ### tailwind
-Install the tailwind cli. 
+Install the tailwind cli. Develop with:
 ```
-./tailwindcss -i input.css -o output.css --watch
+./tailwindcss -i tailwind_src/input.css -o static/styles.css --watch;  
 ```
 
