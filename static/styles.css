@@ -505,6 +505,10 @@ li {
   line-height: 2.25rem;
 }
 
+.document {
+  font-weight: 300;
+}
+
 .document h1 {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
@@ -555,13 +559,15 @@ li {
 }
 
 .document p {
+  margin-top: 2.5rem;
+  margin-bottom: 2.5rem;
   text-align: justify;
 }
 
 @media (prefers-color-scheme: dark) {
   .document p {
     --tw-text-opacity: 1;
-    color: rgb(226 232 240 / var(--tw-text-opacity));
+    color: rgb(203 213 225 / var(--tw-text-opacity));
   }
 }
 
@@ -1407,10 +1413,6 @@ code  {
   border-width: 2px;
 }
 
-.file\:border::file-selector-button {
-  border-width: 1px;
-}
-
 .file\:border-solid::file-selector-button {
   border-style: solid;
 }
@@ -1443,18 +1445,6 @@ code  {
 .hover\:bg-emerald-200:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(167 243 208 / var(--tw-bg-opacity));
-}
-
-.hover\:file\:border-2::file-selector-button:hover {
-  border-width: 2px;
-}
-
-.hover\:file\:border-4::file-selector-button:hover {
-  border-width: 4px;
-}
-
-.hover\:file\:border-solid::file-selector-button:hover {
-  border-style: solid;
 }
 
 .file\:hover\:bg-emerald-400:hover::file-selector-button {
@@ -1555,21 +1545,6 @@ code  {
   .dark\:hover\:bg-slate-600:hover {
     --tw-bg-opacity: 1;
     background-color: rgb(71 85 105 / var(--tw-bg-opacity));
-  }
-
-  .dark\:file\:hover\:bg-emerald-400:hover::file-selector-button {
-    --tw-bg-opacity: 1;
-    background-color: rgb(52 211 153 / var(--tw-bg-opacity));
-  }
-
-  .dark\:file\:hover\:bg-emerald-200:hover::file-selector-button {
-    --tw-bg-opacity: 1;
-    background-color: rgb(167 243 208 / var(--tw-bg-opacity));
-  }
-
-  .dark\:file\:hover\:bg-emerald-500:hover::file-selector-button {
-    --tw-bg-opacity: 1;
-    background-color: rgb(16 185 129 / var(--tw-bg-opacity));
   }
 
   .dark\:file\:hover\:bg-emerald-600:hover::file-selector-button {

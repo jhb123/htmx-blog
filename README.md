@@ -115,7 +115,7 @@ $ source secrets/.env_local
 ```
 Finally, build the server with e.g.
 ```
-cargo run --bin server
+cargo run
 ```
 ## Development
 ### Database
