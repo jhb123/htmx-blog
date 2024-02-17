@@ -7,7 +7,7 @@
 ################################################################################
 # Create a stage for building the application.
 
-ARG RUST_VERSION=1.73.0
+ARG RUST_VERSION=1.76.0
 ARG APP_NAME=htmx-blog
 FROM rust:${RUST_VERSION}-slim-bullseye AS build
 ARG APP_NAME
@@ -28,8 +28,8 @@ RUN --mount=type=bind,source=src,target=src \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
     <<EOF
 set -e
-cargo build --locked
-cp ./target/debug/$APP_NAME /bin/server
+cargo build --release --locked
+cp ./target/release/$APP_NAME /bin/server
 EOF
 
 ################################################################################
