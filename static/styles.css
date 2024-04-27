@@ -595,7 +595,7 @@ li {
   }
 }
 
-code  {
+pre  {
   text-wrap: wrap;
   display: block;
   border-radius: 0.5rem;
@@ -608,7 +608,7 @@ code  {
 }
 
 @media (prefers-color-scheme: dark) {
-  code {
+  pre {
     --tw-bg-opacity: 1;
     background-color: rgb(51 65 85 / var(--tw-bg-opacity));
     --tw-text-opacity: 1;
@@ -617,7 +617,7 @@ code  {
 }
 
 @media (min-width: 640px) {
-  code {
+  pre {
     font-size: 1rem;
     line-height: 1.5rem;
   }
