@@ -1,5 +1,6 @@
 services:
   server:
+    image: jhb123/blog:240819
     build:
       context: .
       target: final
