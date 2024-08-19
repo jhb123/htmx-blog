@@ -62,7 +62,7 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
                 session_id = rng.gen();
             };
             
-            let _ = sqlx::query("UPDATE users SET session=? WHERE id = 1")
+            let _ = sqlx::query("UPDATE users SET session=? WHERE id = 0")
                 .bind(session_id)
                 .execute(&mut *db).await.unwrap();
 
@@ -140,6 +140,7 @@ impl fmt::Display for AuthError {
     }
 }
 
+#[derive(Debug)]
 pub enum User {
     Admin(i32),
     SuperAdmin(i32),
@@ -192,12 +193,17 @@ impl<'r> FromRequest<'r> for User {
             .and_then(|cookie| cookie.value().parse::<User>().ok())
         {
             Some(user) => {
+                println!("Got cookie {:?}", user);
+
                 match user {
                     User::Admin(session_id) => {
-                        let res = sqlx::query("SELECT session FROM users WHERE id = 1")
+                        let res = sqlx::query("SELECT session FROM users WHERE id = 0")
                         .fetch_one(&mut *db).await.unwrap();
 
+
                         let server_session_id: Option::<i32> = res.get::<Option::<i32>,_>(0);
+                        println!("{:?}",server_session_id);
+
                         match  server_session_id {
                             Some(val) => {
                                 if session_id == val {

@@ -26,7 +26,7 @@ features = ["macros", "migrate", "chrono"]
 
 [dependencies.rocket_db_pools]
 version = "=0.1.0-rc.3"
-features = ["sqlx_mysql"]
+features = ["sqlx_sqlite"]
 
 [dependencies.rocket_dyn_templates]
 version = "=0.1.0-rc.3"

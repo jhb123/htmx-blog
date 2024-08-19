@@ -6,8 +6,8 @@ use sqlx::migrate;
 type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T, E>;
 
 #[derive(Database)]
-#[database("sqlx")]
-pub struct SiteDatabase(sqlx::mysql::MySqlPool);
+#[database("site")]
+pub struct SiteDatabase(sqlx::SqlitePool);
 
 // #[rocket::async_trait]
 // impl<'r> FromRequest<'r> for SiteDatabase {

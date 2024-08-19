@@ -1,0 +1,2 @@
+[default.databases.site]
+url = "db/site/site.sqlite"

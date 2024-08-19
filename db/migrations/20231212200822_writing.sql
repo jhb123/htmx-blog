@@ -1,10 +1,10 @@
 -- Add migration script here
 CREATE TABLE IF NOT EXISTS writing 
 (
-    id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     creation_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     published_date DATETIME,
-    is_published BOOLEAN,
+    is_published INTEGER,
     visits INT,
     title TEXT,
     title_image TEXT,

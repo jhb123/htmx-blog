@@ -67,6 +67,7 @@ COPY /templates /templates
 COPY /static /static
 COPY /db/migrations /db/migrations
 COPY /js /js
+COPY Rocket.toml Rocket.toml
 
 # Configure rocket to listen on all interfaces.
 ENV ROCKET_ADDRESS=0.0.0.0

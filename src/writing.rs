@@ -6,7 +6,7 @@ use rocket::{fairing::AdHoc, routes, get, post, FromForm, fs::{TempFile, NamedFi
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};
 use rocket::serde::{Serialize, Deserialize};
-use sqlx::{QueryBuilder, Row, pool::PoolConnection, MySql};
+use sqlx::{QueryBuilder, Row, pool::PoolConnection, Sqlite};
 use sqlx::types::chrono::DateTime;
 
 use crate::{auth::api::User, db::SiteDatabase, config::AppConfig};
@@ -26,7 +26,7 @@ type Result<T, E = rocket::response::Debug<sqlx::Error>> = std::result::Result<T
 #[allow(unused)]
 #[derive(FromForm)]
 struct Upload<'r> {
-    document_id: Option<u64>,
+    document_id: Option<i64>,
     title: String,
     blurb: String,
     files: Vec<TempFile<'r>>,
@@ -97,7 +97,7 @@ struct DocumentMetaData {
     creation_date: Option<DateTime<chrono::Utc>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     published_date: Option<DateTime<chrono::Utc>>,
-    is_published: bool,
+    is_published: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     visits: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -115,7 +115,7 @@ struct FormattedDocumentMetaData {
     id: String,
     creation_date: Option<String>,
     published_date: Option<String>,
-    is_published: bool,
+    is_published: i64,
     visits: Option<String>,
     title: Option<String>,
     // #[serde(skip_serializing_if = "Option::is_none")]
@@ -147,10 +147,10 @@ impl DocumentMetaData {
 async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabase>) -> Template { 
     let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing ORDER BY id DESC").fetch_all(&mut *db).await.unwrap_or(vec![]);
 
-
+    println!("{:?}", user);
     let filtered_data: Vec<FormattedDocumentMetaData> = match user {
         Some(_) => data.into_iter().map(|item| item.display()).collect(),
-        None => data.into_iter().filter(|item| item.is_published ).map(|item| item.display()).collect()
+        None => data.into_iter().filter(|item| item.is_published == 1 ).map(|item| item.display()).collect()
     };
 
     let tag_data  = sqlx::query("SELECT tag FROM writing ORDER BY tag ASC").fetch_all(&mut *db).await;
@@ -220,7 +220,7 @@ async fn search(user: Option<User>, mut db: Connection<SiteDatabase>, title: Opt
 
         let filtered_data: Vec<FormattedDocumentMetaData> = match user {
             Some(_) => data.into_iter().map(|item| item.display()).collect(),
-            None => data.into_iter().filter(|item| item.is_published ).map(|item| item.display()).collect()
+            None => data.into_iter().filter(|item| item.is_published == 1 ).map(|item| item.display()).collect()
         };
     
         match user {
@@ -387,7 +387,7 @@ async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, document_id:
     Ok(())
 }
 
-async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql>) -> Result<u64, DatabaseErrors>{
+async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<Sqlite>) -> Result<i64, DatabaseErrors>{
 
     let query_result = sqlx::query("INSERT INTO writing 
     (is_published, visits, title, blurb, tag) 
@@ -398,10 +398,12 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<MySql
         .execute(db)
         .await?;
 
-    Ok(query_result.last_insert_id())
+    println!("last insert id {}",query_result.last_insert_rowid());
+
+    Ok(query_result.last_insert_rowid())
  }
 
- async fn update_article(upload: &Form<Upload<'_>>,  db: &mut PoolConnection<MySql>) -> Result<(), DatabaseErrors>{
+ async fn update_article(upload: &Form<Upload<'_>>,  db: &mut PoolConnection<Sqlite>) -> Result<(), DatabaseErrors>{
     // let null_str = "Null".to_string();
     let title = if &upload.title != "" {Some(&upload.title)} else {None};//.
     let blurb = if &upload.blurb != "" {Some(&upload.blurb)} else {None};//.
