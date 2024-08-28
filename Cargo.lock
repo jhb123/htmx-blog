@@ -966,6 +966,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "kuchiki",
+ "log",
  "markdown",
  "rand 0.8.5",
  "rocket",

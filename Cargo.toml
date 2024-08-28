@@ -9,6 +9,7 @@ edition = "2021"
 anyhow = "1.0.75"
 chrono = { version = "0.4.31", features = ["clock", "serde"] }
 kuchiki = "0.8.1"
+log = "0.4.22"
 markdown = "1.0.0-alpha.14"
 rand = "0.8.5"
 serde = "1.0.188"

@@ -1,5 +1,6 @@
 use std::{ fs::{self, File}, io, fmt};
 use kuchiki::{traits::TendrilSink, NodeRef};
+use log::info;
 use markdown::{to_html_with_options, Options, CompileOptions};
 use rocket::{fairing::AdHoc, routes, get, post, FromForm, fs::{TempFile, NamedFile}, form::Form, http::Status, response::status::NotFound, delete, State};
 
@@ -147,7 +148,6 @@ impl DocumentMetaData {
 async fn main_blog_page_admin(user: Option<User>, mut db: Connection<SiteDatabase>) -> Template { 
     let data  = sqlx::query_as::<_, DocumentMetaData>("SELECT * FROM writing ORDER BY id DESC").fetch_all(&mut *db).await.unwrap_or(vec![]);
 
-    println!("{:?}", user);
     let filtered_data: Vec<FormattedDocumentMetaData> = match user {
         Some(_) => data.into_iter().map(|item| item.display()).collect(),
         None => data.into_iter().filter(|item| item.is_published == 1 ).map(|item| item.display()).collect()
@@ -234,6 +234,7 @@ async fn search(user: Option<User>, mut db: Connection<SiteDatabase>, title: Opt
 #[post("/upload", data = "<upload>")]
 async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>) -> (Status, Template){ 
  
+    info!("Uploaded form");
 
     let res_document_id = match upload.document_id {
         Some(x) =>  update_article(&upload, &mut *db).await.map(|_| x),
@@ -255,13 +256,20 @@ async fn upload_form(_user: User, mut upload: Form<Upload<'_>>, mut db: Connecti
     //let base_dir = app_config.writing_dir;
     let dir = format!("{0}/{1}",app_config.writing_dir, document_id);
 
+    info!("Creating document {} at {}", document_id, dir);
+
+
     if let Err(error) = fs::create_dir_all(&dir){
         return (Status::InternalServerError, error.to_template())
     }
 
+    info!("User uploaded {} files", upload.files.iter().len());
     // Save each file that is included with the form. If its markdown, generate a html
     // file as well
     for file in upload.files.iter_mut(){
+
+        info!("Processing file {:?}", file.name());
+
         if let Some(content_type) = file.content_type() {
             if content_type.is_markdown() {
                 if let Err(error) = generate_article_html(&document_id, file, &app_config.writing_dir){
@@ -320,7 +328,7 @@ async fn get_article(document_id: &str, mut db: Connection<SiteDatabase>, app_co
 
     let meta_data = match res {
         Ok(meta_data) => meta_data.display(),
-        Err(err) => return (Status::NotFound, err.to_template()),
+        Err(err) => return (Status::NotFound, Template::render("not_found", context!{ })),
     };
 
     let document_title = meta_data.title.unwrap_or(format!("Document {}", meta_data.id));
@@ -388,6 +396,7 @@ async fn delete_stuff(user: User, mut db: Connection<SiteDatabase>, document_id:
 }
 
 async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<Sqlite>) -> Result<i64, DatabaseErrors>{
+    info!("creating new article");
 
     let query_result = sqlx::query("INSERT INTO writing 
     (is_published, visits, title, blurb, tag) 
@@ -398,12 +407,13 @@ async fn create_article(upload: &Form<Upload<'_>>, db: &mut PoolConnection<Sqlit
         .execute(db)
         .await?;
 
-    println!("last insert id {}",query_result.last_insert_rowid());
+    info!("last insert id {}",query_result.last_insert_rowid());
 
     Ok(query_result.last_insert_rowid())
  }
 
  async fn update_article(upload: &Form<Upload<'_>>,  db: &mut PoolConnection<Sqlite>) -> Result<(), DatabaseErrors>{
+    info!("Updating article");
     // let null_str = "Null".to_string();
     let title = if &upload.title != "" {Some(&upload.title)} else {None};//.
     let blurb = if &upload.blurb != "" {Some(&upload.blurb)} else {None};//.
@@ -485,7 +495,8 @@ async fn save_article_item( document_id: &String, file: &mut TempFile<'_>, base_
 }
 
 fn generate_article_html( guid: &String, file: &mut TempFile<'_>, base_dir: &String) -> Result<(), Box<dyn std::error::Error>> {
-    
+    info!("Generating document html");
+
     // Read the markdown to a string
     let markdown_path = file.path().ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Markdown file not found"))?;
     let markdown = fs::read_to_string(markdown_path)?;

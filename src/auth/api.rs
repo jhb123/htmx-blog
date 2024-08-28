@@ -1,15 +1,5 @@
 use rocket::{
-    State,
-    fairing::AdHoc,
-    form::Form,
-    get,
-    http::{Cookie, CookieJar, Status},
-    post,
-    request::{FromRequest, Outcome},
-    response::Redirect,
-    routes,
-    time::OffsetDateTime,
-    FromForm, Request,
+    fairing::AdHoc, form::Form, get, http::{Cookie, CookieJar, Status}, post, request::{FromRequest, Outcome}, response::Redirect, routes, time::OffsetDateTime, FromForm, Request, Responder, State
 };
 use rocket_db_pools::Connection;
 use rocket_dyn_templates::{Template, context};
@@ -41,8 +31,17 @@ struct Admin<'r> {
     pub r#password: &'r str,
 }
 
+#[derive(Responder)]
+enum RedirectOrTemplate {
+    // #[response(status = 500, content_type = "json")]
+    Redirect(Redirect),
+    // #[response(status = 404)]
+    #[response(status = 401)]
+    ErrorTemplate(Template),
+}
+
 #[post("/login", data = "<admin>")]
-async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>, url: HtmxCurrentUrl) -> Redirect {
+async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: Connection<SiteDatabase>, app_config: &State<AppConfig>, url: HtmxCurrentUrl) -> RedirectOrTemplate {
     cookies.remove(Cookie::named("user_id"));
 
     match admin {
@@ -50,9 +49,9 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
 
             let entered_password = form_data.password;
             let admin_hash = &app_config.admin_hash;
-            match validate_password(entered_password, &admin_hash[..]) {
-                Ok(_) => {},
-                Err(_) => return Redirect::to("/panel/login")//Template::render("loginPanel", context! { admin: false })
+            if let Err(_) = validate_password(entered_password, &admin_hash[..]) {
+                let html = Template::render("login_error", context! { });
+                return RedirectOrTemplate::ErrorTemplate(html)
             }
 
             // gen
@@ -74,12 +73,12 @@ async fn login(admin: Option<Form<Admin<'_>>>, cookies: &CookieJar<'_>, mut db: 
             // usr.to_string()
             // Redirect::to("/")
             // let r = uri!(origin.path().to_string());
-            Redirect::to(url.0)
+            RedirectOrTemplate::Redirect(Redirect::to(url.0))
             // Redirect::to(origin)
             // Template::render("index", context! { title: "Hello, World", admin: true })
 
         }
-        None => Redirect::to(url.0) // Template::render("loginPanel", context! { admin: true })
+        None => RedirectOrTemplate::Redirect(Redirect::to(url.0)) // Template::render("loginPanel", context! { admin: true })
     }
 }
 
@@ -193,8 +192,6 @@ impl<'r> FromRequest<'r> for User {
             .and_then(|cookie| cookie.value().parse::<User>().ok())
         {
             Some(user) => {
-                println!("Got cookie {:?}", user);
-
                 match user {
                     User::Admin(session_id) => {
                         let res = sqlx::query("SELECT session FROM users WHERE id = 0")
@@ -202,7 +199,6 @@ impl<'r> FromRequest<'r> for User {
 
 
                         let server_session_id: Option::<i32> = res.get::<Option::<i32>,_>(0);
-                        println!("{:?}",server_session_id);
 
                         match  server_session_id {
                             Some(val) => {
@@ -232,7 +228,6 @@ impl<'r> FromRequest<'r> for HtmxCurrentUrl {
 
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        println!("{:?}",req.headers());
         let url = req.headers().get_one("HX-Current-URL").unwrap();
         return  Outcome::Success(HtmxCurrentUrl(url.to_string()));
     }
