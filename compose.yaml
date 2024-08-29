@@ -3,6 +3,7 @@ services:
     build:
       context: .
       target: final
+    image: jhb123/blog:290819
     env_file:
       - secrets/.env_deploy
     ports:
