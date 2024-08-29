@@ -1,13 +1,12 @@
 services:
   server:
-    image: jhb123/blog:240819
     build:
       context: .
       target: final
     env_file:
       - secrets/.env_deploy
     ports:
-      - 8000:8000
+      - 8123:8000
     volumes:
       - type: bind
         source: ./writing
